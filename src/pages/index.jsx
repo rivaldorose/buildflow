@@ -38,7 +38,7 @@ import PageDetails from "./PageDetails";
 
 import PageTesting from "./PageTesting";
 
-import Pages from "./Pages";
+import PagesPage from "./Pages";
 
 import PasteCode from "./PasteCode";
 
@@ -112,7 +112,7 @@ const PAGES = {
     
     PageTesting: PageTesting,
     
-    Pages: Pages,
+    Pages: PagesPage,
     
     PasteCode: PasteCode,
     
@@ -209,7 +209,7 @@ function PagesContent() {
                 
                 <Route path="/PageTesting" element={<PageTesting />} />
                 
-                <Route path="/Pages" element={<Pages />} />
+                <Route path="/Pages" element={<PagesPage />} />
                 
                 <Route path="/PasteCode" element={<PasteCode />} />
                 
