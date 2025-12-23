@@ -108,6 +108,19 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
       return;
     }
 
+    // Check API key first
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    if (!apiKey) {
+      toast.error(
+        'OpenAI API key niet gevonden! ' + 
+        (window.location.hostname.includes('vercel.app') 
+          ? 'Voeg VITE_OPENAI_API_KEY toe aan Vercel Environment Variables en redeploy.'
+          : 'Voeg VITE_OPENAI_API_KEY toe aan je .env file en herstart de dev server.')
+      );
+      console.error('VITE_OPENAI_API_KEY is niet geconfigureerd');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const parsed = await parseStructure(structureText);
@@ -115,7 +128,18 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
       toast.success('Structuur succesvol geanalyseerd!');
     } catch (error) {
       console.error('Parsing error:', error);
-      toast.error('Fout bij analyseren: ' + error.message);
+      let errorMessage = error.message;
+      
+      // More helpful error messages
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        errorMessage = 'OpenAI API key is ongeldig. Controleer je API key in Vercel/Vercel environment variables.';
+      } else if (error.message.includes('429')) {
+        errorMessage = 'OpenAI API rate limit bereikt. Wacht even en probeer opnieuw.';
+      } else if (error.message.includes('Failed to call OpenAI API')) {
+        errorMessage = 'Kon niet verbinden met OpenAI API. Controleer je internetverbinding.';
+      }
+      
+      toast.error('Fout bij analyseren: ' + errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -182,13 +206,28 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
       }
 
       // 4. Create notes for everything that doesn't fit
-      // Use the first created page, or skip if no pages were created
       if (parsedData.notes && Array.isArray(parsedData.notes) && parsedData.notes.length > 0) {
-        const firstPageId = createdPages.length > 0 ? createdPages[0].id : null;
+        let notesPageId = createdPages.length > 0 ? createdPages[0].id : null;
         
-        // If no pages exist, we can't create notes (notes require a page_id)
-        // Instead, we'll create a summary note that combines all notes
-        if (firstPageId) {
+        // If no pages exist, create a "Notes" page for storing notes
+        if (!notesPageId) {
+          try {
+            const notesPage = await base44.entities.Page.create({
+              project: project.id,
+              name: 'Notes',
+              description: 'Notities en aanvullende informatie',
+              path: '/notes',
+              status: 'Todo'
+            });
+            notesPageId = notesPage.id;
+            createdPages.push(notesPage);
+          } catch (err) {
+            console.error('Error creating notes page:', err);
+          }
+        }
+        
+        // Create notes if we have a page ID
+        if (notesPageId) {
           for (const noteText of parsedData.notes) {
             try {
               // Extract title (first line or first 50 chars) and content
@@ -196,9 +235,9 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
               const title = lines[0]?.substring(0, 50) || 'Notitie';
               const content = lines.length > 1 ? lines.slice(1).join('\n') : noteText;
               
-              // Create as a Note associated with the first page
+              // Create as a Note associated with the notes page
               await base44.entities.Note.create({
-                page: firstPageId,
+                page: notesPageId,
                 title: title,
                 content: content,
                 color: 'blue'
@@ -208,10 +247,6 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
               // If Note creation fails, just log it - don't break the flow
             }
           }
-        } else {
-          // If no pages, we could append to project description or create a special page
-          console.log('Cannot create notes: No pages were created. Notes:', parsedData.notes);
-          // Optionally, append notes to project description or create a notes page first
         }
       }
 
@@ -465,10 +500,31 @@ Plak hier je volledige project structuur...`}
           )}
 
           {!import.meta.env.VITE_OPENAI_API_KEY && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-              <p className="text-sm text-amber-800">
-                ⚠️ Voeg VITE_OPENAI_API_KEY toe aan je environment variables om deze feature te gebruiken
-              </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-amber-900">
+                    ⚠️ OpenAI API Key niet gevonden
+                  </p>
+                  <p className="text-sm text-amber-800">
+                    {window.location.hostname.includes('vercel.app') ? (
+                      <>
+                        Voeg <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">VITE_OPENAI_API_KEY</code> toe aan je Vercel Environment Variables en redeploy je app.
+                        <br />
+                        Ga naar: Vercel Dashboard → Project Settings → Environment Variables
+                      </>
+                    ) : (
+                      <>
+                        Voeg <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">VITE_OPENAI_API_KEY</code> toe aan je <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">.env</code> file en herstart de development server.
+                      </>
+                    )}
+                  </p>
+                  <p className="text-xs text-amber-700 mt-2">
+                    Zie <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono">AI_SETUP.md</code> voor instructies.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
