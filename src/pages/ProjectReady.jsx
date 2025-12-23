@@ -23,6 +23,10 @@ export default function ProjectReady() {
         // Get data from localStorage
         const setupData = JSON.parse(localStorage.getItem('projectSetup') || '{}');
         
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:22',message:'Starting project creation',data:{hasSetupData:!!setupData,setupDataKeys:setupData?Object.keys(setupData):[]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
         console.log('Creating project with data:', setupData);
         
         // Create project in database
@@ -106,6 +110,9 @@ export default function ProjectReady() {
         
       } catch (error) {
         console.error('Failed to create project:', error);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:112',message:'Project creation failed',data:{errorMessage:error?.message,errorName:error?.name,errorCode:error?.code,errorString:error?.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         toast.error(`Failed to create project: ${error.message || error.toString()}`);
         setIsCreating(false);
       } finally {

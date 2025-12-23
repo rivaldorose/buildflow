@@ -62,11 +62,22 @@ export const Project = {
   },
   
   create: async (data) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:64',message:'Project.create called',data:{hasData:!!data,dataKeys:data?Object.keys(data):[]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:68',message:'Auth getUser result',data:{hasUser:!!user,userId:user?.id,hasError:!!userError,errorMessage:userError?.message,errorName:userError?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
     if (userError || !user) {
       console.error('User authentication error:', userError);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:71',message:'Authentication failed',data:{userError:userError?.toString(),errorName:userError?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       // For now, allow creating projects without user (for testing)
       // In production, you might want to require authentication
     }
@@ -76,6 +87,10 @@ export const Project = {
       ...(user && { user_id: user.id }) // Only add user_id if user exists
     };
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:78',message:'Project data before insert',data:{hasUserId:!!projectData.user_id,userId:projectData.user_id,dataKeys:Object.keys(projectData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    
     console.log('Creating project with data:', projectData);
     
     const { data: result, error } = await supabase
@@ -84,12 +99,22 @@ export const Project = {
       .select()
       .single();
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:86',message:'Supabase insert result',data:{hasResult:!!result,hasError:!!error,errorMessage:error?.message,errorCode:error?.code,errorDetails:error?.details,errorHint:error?.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    
     if (error) {
       console.error('Error creating project:', error);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:89',message:'Insert error thrown',data:{errorMessage:error.message,errorCode:error.code,errorDetails:error.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       throw error;
     }
     
     console.log('Project created successfully:', result);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:95',message:'Project created successfully',data:{projectId:result?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     return formatResponse(result);
   },
   
