@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { base44 } from '@/api/base44Client';
@@ -13,11 +13,14 @@ import {
 export default function ProjectReady() {
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
+  const hasCreatedProject = useRef(false);
 
   useEffect(() => {
     const createProjectInDatabase = async () => {
-      if (isCreating) return;
+      // Prevent multiple creations
+      if (hasCreatedProject.current || isCreating) return;
       
+      hasCreatedProject.current = true;
       setIsCreating(true);
       try {
         // Get data from localStorage
@@ -134,6 +137,7 @@ export default function ProjectReady() {
           description: error?.hint || error?.details || 'Please check the console for more details',
           duration: 5000,
         });
+        hasCreatedProject.current = false; // Reset on error so user can retry
         setIsCreating(false);
       } finally {
         setIsCreating(false);
@@ -141,7 +145,7 @@ export default function ProjectReady() {
     };
 
     createProjectInDatabase();
-  }, [isCreating]);
+  }, []); // Only run once on mount
 
   return (
     <div className="bg-slate-50 min-h-screen flex items-center justify-center p-4">
