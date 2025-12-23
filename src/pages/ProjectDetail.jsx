@@ -120,12 +120,20 @@ export default function ProjectDetail() {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          // Only set if there's actual content (folders array exists and has items)
-          if (parsed && parsed.folders && parsed.folders.length > 0) {
+          // Check if it's just the default empty folders (components, pages, utils with no children)
+          const isDefaultEmpty = parsed && parsed.folders && parsed.folders.length > 0 && 
+            parsed.folders.every(folder => 
+              (folder.name === 'components' || folder.name === 'pages' || folder.name === 'utils') &&
+              (!folder.children || folder.children.length === 0)
+            ) && parsed.folders.length === 3;
+          
+          // Only set if there's actual content (not just default empty folders)
+          if (parsed && parsed.folders && parsed.folders.length > 0 && !isDefaultEmpty) {
             setAppStructure(parsed);
           } else {
-            // Keep empty structure if saved data is empty
+            // Clear default folders - start fresh
             setAppStructure({ folders: [] });
+            localStorage.removeItem(`appStructure_${projectId}`);
           }
         } catch (error) {
           console.error('Failed to load app structure:', error);
