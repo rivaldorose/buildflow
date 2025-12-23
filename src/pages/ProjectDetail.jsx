@@ -2406,7 +2406,7 @@ Provide a brief executive summary with key insights and next steps.`,
                         />
                         <div className="flex-1">
                           <div className={`text-sm font-medium ${todo.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                            {todo.title}
+                            {todo.task}
                           </div>
                           <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                             {todo.due_date && (
@@ -2503,7 +2503,7 @@ Provide a brief executive summary with key insights and next steps.`,
                       icon: Check,
                       color: 'bg-green-100 text-green-600',
                       title: 'Todo Completed',
-                      description: todo.title,
+                      description: todo.task,
                       timestamp: new Date(todo.updated_date)
                     });
                   });
