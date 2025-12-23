@@ -2355,8 +2355,8 @@ Provide a brief executive summary with key insights and next steps.`,
                 </div>
 
                 {/* Scrollable todo list - fixed height container */}
-                <div className="relative max-h-[600px] overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar" style={{ maxHeight: '600px' }}>
-                  <div className="space-y-3 pb-2">
+                <div className="overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar" style={{ height: '600px' }}>
+                  <div className="space-y-3">
                   {addingTodo && (
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3 mb-4">
                       <input
