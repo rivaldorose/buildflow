@@ -109,6 +109,17 @@ export default function PageDetail() {
     enabled: !!pageId
   });
 
+  const { data: subpages = [] } = useQuery({
+    queryKey: ['subpages', pageId],
+    queryFn: () => base44.entities.Page.list().then(pages => 
+      pages.filter(p => p.parent_page === pageId)
+    ),
+    enabled: !!pageId
+  });
+
+  const [showAddSubpage, setShowAddSubpage] = useState(false);
+  const [newSubpage, setNewSubpage] = useState({ name: '', description: '', path: '' });
+
   const { data: allPages = [] } = useQuery({
     queryKey: ['allPages'],
     queryFn: () => base44.entities.Page.list()
@@ -410,6 +421,37 @@ Return as JSON array of test cases.`;
     }
   });
 
+  const createSubpageMutation = useMutation({
+    mutationFn: (data) => base44.entities.Page.create({
+      ...data,
+      parent_page: pageId,
+      project: page?.project,
+      status: 'Todo'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['subpages', pageId]);
+      queryClient.invalidateQueries(['pages', page?.project]);
+      toast.success('Subpagina aangemaakt!');
+      setShowAddSubpage(false);
+      setNewSubpage({ name: '', description: '', path: '' });
+    },
+    onError: () => {
+      toast.error('Failed to create subpagina');
+    }
+  });
+
+  const deleteSubpageMutation = useMutation({
+    mutationFn: (id) => base44.entities.Page.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['subpages', pageId]);
+      queryClient.invalidateQueries(['pages', page?.project]);
+      toast.success('Subpagina verwijderd!');
+    },
+    onError: () => {
+      toast.error('Failed to delete subpagina');
+    }
+  });
+
   const updatePageInfoMutation = useMutation({
     mutationFn: (data) => base44.entities.Page.update(pageId, data),
     onSuccess: () => {
@@ -630,6 +672,7 @@ Format the response as structured markdown with code blocks.`;
   const tabs = [
     { id: 'preview', label: 'Preview' },
     { id: 'features', label: 'Features & TODOs' },
+    { id: 'subpages', label: 'Subpagina\'s' },
     { id: 'prompts', label: 'AI Prompts' },
     { id: 'code', label: 'Code' },
     { id: 'notes', label: 'Notes' }
@@ -2682,6 +2725,151 @@ Format the response as structured markdown with code blocks.`;
                   {form.frontend_code || '// Generated code will appear here...'}
                 </pre>
               </div>
+            </div>
+          )}
+
+          {/* Subpagina's Tab */}
+          {activeTab === 'subpages' && (
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-end justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Subpagina's</h2>
+                  <p className="text-slate-500 mt-2">Beheer subpagina's onder deze pagina. Subpagina's hebben dezelfde functionaliteit als hoofdpagina's.</p>
+                </div>
+                <button
+                  onClick={() => setShowAddSubpage(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Nieuwe Subpagina
+                </button>
+              </div>
+
+              {showAddSubpage && (
+                <div className="bg-white rounded-xl border-2 border-slate-200 p-6 mb-6 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Maak Subpagina</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700 mb-2 block">Naam *</label>
+                      <input
+                        type="text"
+                        placeholder="Bijv. Login Form, Dashboard Widget"
+                        value={newSubpage.name}
+                        onChange={(e) => setNewSubpage({ ...newSubpage, name: e.target.value })}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700 mb-2 block">Beschrijving (optioneel)</label>
+                      <Textarea
+                        placeholder="Beschrijf wat deze subpagina doet..."
+                        value={newSubpage.description}
+                        onChange={(e) => setNewSubpage({ ...newSubpage, description: e.target.value })}
+                        className="h-24 resize-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700 mb-2 block">Path (optioneel)</label>
+                      <input
+                        type="text"
+                        placeholder="Bijv. /login, /widget"
+                        value={newSubpage.path}
+                        onChange={(e) => setNewSubpage({ ...newSubpage, path: e.target.value })}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => {
+                          if (!newSubpage.name.trim()) {
+                            toast.error('Naam is verplicht');
+                            return;
+                          }
+                          createSubpageMutation.mutate({
+                            name: newSubpage.name,
+                            description: newSubpage.description || null,
+                            path: newSubpage.path || null
+                          });
+                        }}
+                        disabled={createSubpageMutation.isPending || !newSubpage.name.trim()}
+                        className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {createSubpageMutation.isPending ? 'Aanmaken...' : 'Subpagina Aanmaken'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowAddSubpage(false);
+                          setNewSubpage({ name: '', description: '', path: '' });
+                        }}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition-colors"
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {subpages.length === 0 && !showAddSubpage ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-slate-200">
+                  <FileText className="w-16 h-16 mb-4 opacity-50" />
+                  <p className="text-sm mb-2">Geen subpagina's</p>
+                  <p className="text-xs text-slate-400">Maak een subpagina om onder deze pagina te bouwen</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {subpages.map((subpage) => (
+                    <Link
+                      key={subpage.id}
+                      to={createPageUrl('PageDetail') + '?id=' + subpage.id}
+                      className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                              {subpage.name}
+                            </h3>
+                            {subpage.path && (
+                              <p className="text-xs text-slate-400 font-mono">{subpage.path}</p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (confirm('Weet je zeker dat je deze subpagina wilt verwijderen?')) {
+                              deleteSubpageMutation.mutate(subpage.id);
+                            }
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {subpage.description && (
+                        <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                          {subpage.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-xs text-slate-500">
+                        <span className={`px-2 py-1 rounded-full ${
+                          subpage.status === 'Done' ? 'bg-green-100 text-green-700' :
+                          subpage.status === 'Doing' ? 'bg-blue-100 text-blue-700' :
+                          'bg-purple-100 text-purple-700'
+                        }`}>
+                          {subpage.status}
+                        </span>
+                        <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
