@@ -93,6 +93,10 @@ export const Project = {
     
     console.log('Creating project with data:', projectData);
     
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:93',message:'Before Supabase insert',data:{projectDataKeys:Object.keys(projectData),projectDataValues:JSON.stringify(projectData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
     const { data: result, error } = await supabase
       .from('projects')
       .insert(projectData)
@@ -100,7 +104,7 @@ export const Project = {
       .single();
     
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:86',message:'Supabase insert result',data:{hasResult:!!result,hasError:!!error,errorMessage:error?.message,errorCode:error?.code,errorDetails:error?.details,errorHint:error?.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'entities.js:102',message:'Supabase insert result',data:{hasResult:!!result,hasError:!!error,errorMessage:error?.message,errorCode:error?.code,errorDetails:error?.details,errorHint:error?.hint,fullError:JSON.stringify(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
     
     if (error) {

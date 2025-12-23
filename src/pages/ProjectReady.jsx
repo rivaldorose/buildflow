@@ -24,13 +24,12 @@ export default function ProjectReady() {
         const setupData = JSON.parse(localStorage.getItem('projectSetup') || '{}');
         
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:22',message:'Starting project creation',data:{hasSetupData:!!setupData,setupDataKeys:setupData?Object.keys(setupData):[]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:24',message:'Starting project creation',data:{hasSetupData:!!setupData,setupDataKeys:setupData?Object.keys(setupData):[],setupDataName:setupData?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
         
         console.log('Creating project with data:', setupData);
         
-        // Create project in database
-        const project = await base44.entities.Project.create({
+        const projectDataToSend = {
           name: setupData.name || 'Untitled Project',
           description: setupData.description || '',
           app_type: setupData.platforms || ['Web'],
@@ -38,7 +37,14 @@ export default function ProjectReady() {
           ai_builder: setupData.aiBuilder?.primaryBuilder || 'Base44',
           status: 'Planning',
           progress: 0
-        });
+        };
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:38',message:'Project data to send',data:{projectDataKeys:Object.keys(projectDataToSend),projectDataValues:JSON.stringify(projectDataToSend)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
+        // Create project in database
+        const project = await base44.entities.Project.create(projectDataToSend);
 
         console.log('Project created:', project);
 
