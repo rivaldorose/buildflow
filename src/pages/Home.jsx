@@ -264,13 +264,21 @@ export default function Home() {
                 );
               })}
 
-              {/* New Project Button */}
-              <button 
-                onClick={() => navigate(createPageUrl('ProjectSetup'))}
-                className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 font-medium"
-              >
-                <PlusCircle className="w-5 h-5" /> Create New Project
-              </button>
+              {/* New Project Buttons */}
+              <div className="space-y-3">
+                <button 
+                  onClick={() => navigate(createPageUrl('AIProjectGenerator'))}
+                  className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center gap-2 font-semibold shadow-lg shadow-purple-200"
+                >
+                  <Sparkles className="w-5 h-5" /> Create with AI
+                </button>
+                <button 
+                  onClick={() => navigate(createPageUrl('ProjectSetup'))}
+                  className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 font-medium"
+                >
+                  <PlusCircle className="w-5 h-5" /> Create New Project
+                </button>
+              </div>
             </div>
           </section>
 
