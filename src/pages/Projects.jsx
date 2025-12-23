@@ -153,7 +153,7 @@ export default function Projects() {
             </div>
 
             {/* Filter Pills */}
-            <div className="flex items-center p-1 bg-white border border-slate-200 rounded-lg shadow-sm">
+            <div className="flex items-center p-1 bg-white border border-slate-200 rounded-lg shadow-sm flex-wrap gap-1">
               <button 
                 onClick={() => setFilter('all')}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -161,6 +161,14 @@ export default function Projects() {
                 }`}
               >
                 All
+              </button>
+              <button 
+                onClick={() => setFilter('Planning')}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  filter === 'Planning' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                Planning
               </button>
               <button 
                 onClick={() => setFilter('active')}
@@ -171,20 +179,20 @@ export default function Projects() {
                 Active
               </button>
               <button 
-                onClick={() => setFilter('archived')}
+                onClick={() => setFilter('Review')}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  filter === 'archived' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  filter === 'Review' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                Archived
+                Review
               </button>
               <button 
-                onClick={() => setFilter('templates')}
+                onClick={() => setFilter('Done')}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  filter === 'templates' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  filter === 'Done' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                Templates
+                Done
               </button>
             </div>
           </header>
