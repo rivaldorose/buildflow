@@ -2371,7 +2371,11 @@ Provide a brief executive summary with key insights and next steps.`,
                       </select>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => createTodoMutation.mutate({ ...newTodoForm, project: projectId })}
+                          onClick={() => createTodoMutation.mutate({ 
+                            task: newTodoForm.title, // Map title to task (database field)
+                            project: projectId,
+                            completed: false
+                          })}
                           disabled={!newTodoForm.title.trim() || createTodoMutation.isPending}
                           className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
                         >
