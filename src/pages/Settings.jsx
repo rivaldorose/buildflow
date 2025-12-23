@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/config/supabase';
 import { 
-  User, ShieldCheck, CreditCard, Trash2, Settings as SettingsIcon, Bell, 
+  User, ShieldCheck, Trash2, Settings as SettingsIcon, Bell, 
   Palette, Globe, Zap, Database, Cpu, Mic, Plus, Users, Key, Eye,
   Check, AlertCircle, X, Smartphone, Shield, Laptop, Monitor, LogOut,
   CheckCircle2, AlertTriangle, Circle, ShieldAlert, ChevronDown, Edit2, Loader2,
@@ -79,8 +79,7 @@ export default function Settings() {
     { name: 'Aura', icon: Zap, connected: true },
     { name: 'Supabase', icon: Database, connected: true },
     { name: 'Claude', icon: Cpu, connected: true },
-    { name: 'ElevenLabs', icon: Mic, connected: false },
-    { name: 'Stripe', icon: CreditCard, connected: true }
+    { name: 'ElevenLabs', icon: Mic, connected: false }
   ];
 
   // Handle password change
@@ -163,21 +162,6 @@ export default function Settings() {
                 <span className="text-[15px] font-semibold">Password & Security</span>
               )}
             </div>
-
-            <button 
-              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
-              title={sidebarCollapsed ? 'Billing' : ''}
-            >
-              <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-3'}`}>
-                <CreditCard className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
-                {!sidebarCollapsed && (
-                  <span className="text-[15px] font-medium">Billing</span>
-                )}
-              </div>
-              {!sidebarCollapsed && (
-                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">PRO</span>
-              )}
-            </button>
 
             <button 
               className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors group relative`}
