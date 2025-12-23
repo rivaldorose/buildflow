@@ -113,7 +113,21 @@ export default function ProjectReady() {
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:112',message:'Project creation failed',data:{errorMessage:error?.message,errorName:error?.name,errorCode:error?.code,errorString:error?.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
-        toast.error(`Failed to create project: ${error.message || error.toString()}`);
+        
+        // Extract user-friendly error message
+        let errorMessage = 'Failed to create project';
+        if (error?.message) {
+          errorMessage = error.message;
+        } else if (error?.code) {
+          errorMessage = `Error ${error.code}: ${error.message || 'Unknown error'}`;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
+        toast.error(errorMessage, {
+          description: error?.hint || error?.details || 'Please check the console for more details',
+          duration: 5000,
+        });
         setIsCreating(false);
       } finally {
         setIsCreating(false);
