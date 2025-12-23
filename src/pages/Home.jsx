@@ -7,7 +7,7 @@ import {
   Folder, FileText, Target, Bug, ArrowUp, ArrowDown, ArrowRight,
   Layers, Timer, CheckCircle, Calendar, Briefcase, Wind, Scale,
   PlusCircle, Square, CheckSquare, Clock, Palette, Code2, Rocket,
-  AlertTriangle
+  AlertTriangle, Sparkles
 } from 'lucide-react';
 import AuraPromptDialog from '../components/home/AuraPromptDialog';
 
