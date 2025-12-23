@@ -120,11 +120,11 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 overflow-hidden h-full">
       
       {/* Left Sidebar */}
-      <aside className="w-[280px] bg-slate-50 border-r border-slate-200 overflow-y-auto flex-none pb-10">
-        <div className="p-4 space-y-8">
+      <aside className="w-[280px] bg-slate-50 border-r border-slate-200 overflow-hidden flex-none flex flex-col h-full">
+        <div className="p-4 space-y-8 overflow-y-auto flex-1">
           
           {/* Account Section */}
           <div className="space-y-1">
