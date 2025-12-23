@@ -252,17 +252,24 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
         }
       }
 
-      // Invalidate queries to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['features'] });
-      queryClient.invalidateQueries({ queryKey: ['pages'] });
+      // Invalidate queries to refresh the list - wait for them to complete
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['projects'] }),
+        queryClient.invalidateQueries({ queryKey: ['features'] }),
+        queryClient.invalidateQueries({ queryKey: ['pages'] }),
+        queryClient.refetchQueries({ queryKey: ['projects'] }),
+        queryClient.refetchQueries({ queryKey: ['features'] }),
+        queryClient.refetchQueries({ queryKey: ['pages'] })
+      ]);
 
       toast.success(`Project "${project.name}" succesvol aangemaakt met ${parsedData.features?.length || 0} features en ${parsedData.pages?.length || 0} pages!`);
+      
+      setIsProcessing(false);
       
       // Navigate to the new project
       setTimeout(() => {
         navigate(createPageUrl('Projects'));
-      }, 1500);
+      }, 500);
 
     } catch (error) {
       console.error('Error creating project:', error);
