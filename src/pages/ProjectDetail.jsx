@@ -2354,7 +2354,8 @@ Provide a brief executive summary with key insights and next steps.`,
                   </button>
                 </div>
 
-                <div className="space-y-3">
+                {/* Scrollable todo list */}
+                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                   {addingTodo && (
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3 mb-4">
                       <input
@@ -2419,7 +2420,18 @@ Provide a brief executive summary with key insights and next steps.`,
                     </div>
                   )}
 
-                  {projectTodos.slice(0, 3).map((todo) => {
+                  {/* Sort todos: incomplete first, completed last */}
+                  {[...projectTodos]
+                    .sort((a, b) => {
+                      // Completed todos go to bottom
+                      if (a.completed && !b.completed) return 1;
+                      if (!a.completed && b.completed) return -1;
+                      // Within same completion status, sort by created_date (newest first for incomplete, oldest first for completed)
+                      const dateA = new Date(a.created_date || 0);
+                      const dateB = new Date(b.created_date || 0);
+                      return a.completed ? dateA - dateB : dateB - dateA;
+                    })
+                    .map((todo) => {
                     const isOverdue = todo.due_date && new Date(todo.due_date) < new Date() && !todo.completed;
                     const dueDate = todo.due_date ? new Date(todo.due_date) : null;
                     const isToday = dueDate && dueDate.toDateString() === new Date().toDateString();
@@ -2468,11 +2480,6 @@ Provide a brief executive summary with key insights and next steps.`,
                     </div>
                   )}
 
-                  {projectTodos.length > 3 && (
-                    <button className="w-full text-sm text-slate-500 hover:text-slate-900 py-2 flex items-center justify-center gap-1">
-                      View all {projectTodos.length} todos <ArrowRight className="w-3 h-3" />
-                    </button>
-                  )}
                 </div>
               </section>
 
