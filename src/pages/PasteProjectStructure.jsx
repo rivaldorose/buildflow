@@ -161,17 +161,19 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
         }
       }
 
-      // 3. Create pages
+      // 3. Create pages and store their IDs
+      const createdPages = [];
       if (parsedData.pages && Array.isArray(parsedData.pages)) {
         for (const page of parsedData.pages) {
           try {
-            await base44.entities.Page.create({
+            const createdPage = await base44.entities.Page.create({
               project: project.id,
               name: page.name || 'Unnamed Page',
               description: page.description || '',
               path: page.path || '/',
               status: 'Todo'
             });
+            createdPages.push(createdPage);
           } catch (err) {
             console.error('Error creating page:', err);
             // Continue with next page
@@ -180,30 +182,36 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
       }
 
       // 4. Create notes for everything that doesn't fit
+      // Use the first created page, or skip if no pages were created
       if (parsedData.notes && Array.isArray(parsedData.notes) && parsedData.notes.length > 0) {
-        // Create notes - find first page or create without page association
-        const firstPageId = parsedData.pages && parsedData.pages.length > 0 
-          ? parsedData.pages[0]?.id 
-          : null;
+        const firstPageId = createdPages.length > 0 ? createdPages[0].id : null;
         
-        for (const noteText of parsedData.notes) {
-          try {
-            // Extract title (first line or first 50 chars) and content
-            const lines = noteText.split('\n').filter(l => l.trim());
-            const title = lines[0]?.substring(0, 50) || 'Notitie';
-            const content = lines.length > 1 ? lines.slice(1).join('\n') : noteText;
-            
-            // Create as a Note (page can be null if no pages exist yet)
-            await base44.entities.Note.create({
-              page: firstPageId || null, // Associate with first page if available
-              title: title,
-              content: content,
-              color: 'blue'
-            });
-          } catch (err) {
-            console.error('Error creating note:', err);
-            // If Note creation fails, just log it - don't break the flow
+        // If no pages exist, we can't create notes (notes require a page_id)
+        // Instead, we'll create a summary note that combines all notes
+        if (firstPageId) {
+          for (const noteText of parsedData.notes) {
+            try {
+              // Extract title (first line or first 50 chars) and content
+              const lines = noteText.split('\n').filter(l => l.trim());
+              const title = lines[0]?.substring(0, 50) || 'Notitie';
+              const content = lines.length > 1 ? lines.slice(1).join('\n') : noteText;
+              
+              // Create as a Note associated with the first page
+              await base44.entities.Note.create({
+                page: firstPageId,
+                title: title,
+                content: content,
+                color: 'blue'
+              });
+            } catch (err) {
+              console.error('Error creating note:', err);
+              // If Note creation fails, just log it - don't break the flow
+            }
           }
+        } else {
+          // If no pages, we could append to project description or create a special page
+          console.log('Cannot create notes: No pages were created. Notes:', parsedData.notes);
+          // Optionally, append notes to project description or create a notes page first
         }
       }
 
