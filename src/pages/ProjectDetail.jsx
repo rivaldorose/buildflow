@@ -37,11 +37,7 @@ export default function ProjectDetail() {
   const [aiRisks, setAiRisks] = useState([]);
   const [aiSummary, setAiSummary] = useState(null);
   const [appStructure, setAppStructure] = useState({
-    folders: [
-      { id: '1', name: 'components', type: 'folder', children: [] },
-      { id: '2', name: 'pages', type: 'folder', children: [] },
-      { id: '3', name: 'utils', type: 'folder', children: [] }
-    ]
+    folders: []
   });
   const [editingStructureItem, setEditingStructureItem] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState({});
@@ -123,10 +119,22 @@ export default function ProjectDetail() {
       const saved = localStorage.getItem(`appStructure_${projectId}`);
       if (saved) {
         try {
-          setAppStructure(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          // Only set if there's actual content (folders array exists and has items)
+          if (parsed && parsed.folders && parsed.folders.length > 0) {
+            setAppStructure(parsed);
+          } else {
+            // Keep empty structure if saved data is empty
+            setAppStructure({ folders: [] });
+          }
         } catch (error) {
           console.error('Failed to load app structure:', error);
+          // On error, keep empty structure
+          setAppStructure({ folders: [] });
         }
+      } else {
+        // No saved data, keep empty structure
+        setAppStructure({ folders: [] });
       }
     }
   }, [projectId]);
