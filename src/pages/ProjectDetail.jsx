@@ -2420,6 +2420,11 @@ Provide a brief executive summary with key insights and next steps.`,
                           <div className={`text-sm font-medium ${todo.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                             {todo.task}
                           </div>
+                          {todo.description && (
+                            <div className={`text-xs mt-1 ${todo.completed ? 'text-slate-400' : 'text-slate-600'}`}>
+                              {todo.description}
+                            </div>
+                          )}
                           <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                             {todo.due_date && (
                               <span className={`${isOverdue ? 'text-red-600 font-semibold' : isToday ? 'text-orange-600 font-semibold' : ''}`}>
