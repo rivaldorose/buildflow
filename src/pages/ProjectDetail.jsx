@@ -26,7 +26,7 @@ export default function ProjectDetail() {
   const [showUnassignedPages, setShowUnassignedPages] = useState(false);
   const [addingUnassignedPage, setAddingUnassignedPage] = useState(false);
   const [addingTodo, setAddingTodo] = useState(false);
-  const [newTodoForm, setNewTodoForm] = useState({ title: '', category: '', due_date: '', priority: 'Medium' });
+  const [newTodoForm, setNewTodoForm] = useState({ title: '', description: '', category: '', due_date: '', priority: 'Medium' });
   const [showNewFlowDialog, setShowNewFlowDialog] = useState(false);
   const [newFlowName, setNewFlowName] = useState('');
   const [editingFlowId, setEditingFlowId] = useState(null);
@@ -235,7 +235,7 @@ export default function ProjectDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries(['projectTodos', projectId]);
       setAddingTodo(false);
-      setNewTodoForm({ title: '', category: '', due_date: '', priority: 'Medium' });
+      setNewTodoForm({ title: '', description: '', category: '', due_date: '', priority: 'Medium' });
       toast.success('Todo added');
     },
     onError: (error) => {
@@ -2349,6 +2349,13 @@ Provide a brief executive summary with key insights and next steps.`,
                         className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         autoFocus
                       />
+                      <textarea
+                        placeholder="Beschrijving (optioneel)"
+                        value={newTodoForm.description}
+                        onChange={(e) => setNewTodoForm({ ...newTodoForm, description: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        rows={3}
+                      />
                       <div className="grid grid-cols-2 gap-2">
                         <input
                           type="text"
@@ -2377,6 +2384,7 @@ Provide a brief executive summary with key insights and next steps.`,
                         <button
                           onClick={() => createTodoMutation.mutate({ 
                             task: newTodoForm.title, // Map title to task (database field)
+                            description: newTodoForm.description || null,
                             project: projectId,
                             completed: false
                           })}
