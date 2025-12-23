@@ -118,11 +118,13 @@ export default function Projects() {
 
   // Get count text based on filter
   const getProjectCountText = () => {
+    // When filter is 'all' or not active, show total number of projects
     if (filter === 'all') {
       return `${projects.length} projecten`;
     } else if (filter === 'active') {
       return `${filteredProjects.length} actieve projecten`;
     } else {
+      // When a specific filter is active, show filtered count
       const filterLabels = {
         'Planning': 'planning',
         'Building': 'actieve',
