@@ -27,6 +27,8 @@ export default function ProjectDetail() {
   const [addingUnassignedPage, setAddingUnassignedPage] = useState(false);
   const [addingTodo, setAddingTodo] = useState(false);
   const [newTodoForm, setNewTodoForm] = useState({ title: '', description: '', category: '', due_date: '', priority: 'Medium' });
+  const [editingTodo, setEditingTodo] = useState(null);
+  const [editTodoForm, setEditTodoForm] = useState({ task: '', description: '', category: '', due_date: '', priority: 'Medium' });
   const [showNewFlowDialog, setShowNewFlowDialog] = useState(false);
   const [newFlowName, setNewFlowName] = useState('');
   const [editingFlowId, setEditingFlowId] = useState(null);
@@ -264,6 +266,31 @@ export default function ProjectDetail() {
     mutationFn: ({ id, completed }) => base44.entities.ProjectTodo.update(id, { completed }),
     onSuccess: () => {
       queryClient.invalidateQueries(['projectTodos', projectId]);
+    }
+  });
+
+  const deleteTodoMutation = useMutation({
+    mutationFn: (id) => base44.entities.ProjectTodo.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projectTodos', projectId]);
+      toast.success('Todo deleted');
+    },
+    onError: (error) => {
+      console.error('Error deleting todo:', error);
+      toast.error('Failed to delete todo: ' + (error.message || 'Unknown error'));
+    }
+  });
+
+  const updateTodoMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ProjectTodo.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projectTodos', projectId]);
+      setEditingTodo(null);
+      toast.success('Todo updated');
+    },
+    onError: (error) => {
+      console.error('Error updating todo:', error);
+      toast.error('Failed to update todo: ' + (error.message || 'Unknown error'));
     }
   });
 
@@ -2438,7 +2465,7 @@ Provide a brief executive summary with key insights and next steps.`,
                     const isToday = dueDate && dueDate.toDateString() === new Date().toDateString();
 
                     return (
-                      <div key={todo.id} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <div key={todo.id} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 group hover:border-slate-200 transition-colors">
                         <input
                           type="checkbox"
                           checked={todo.completed}
@@ -2446,30 +2473,144 @@ Provide a brief executive summary with key insights and next steps.`,
                           className="w-4 h-4 mt-0.5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                         />
                         <div className="flex-1">
-                          <div className={`text-sm font-medium ${todo.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                            {todo.task}
-                          </div>
-                          {todo.description && (
-                            <div className={`text-xs mt-1 ${todo.completed ? 'text-slate-400' : 'text-slate-600'}`}>
-                              {todo.description}
+                          {editingTodo === todo.id ? (
+                            <div className="space-y-3">
+                              <input
+                                type="text"
+                                placeholder="Todo title"
+                                value={editTodoForm.task}
+                                onChange={(e) => setEditTodoForm({ ...editTodoForm, task: e.target.value })}
+                                className="w-full px-3 py-2 border border-blue-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                              />
+                              <textarea
+                                placeholder="Beschrijving (optioneel)"
+                                value={editTodoForm.description || ''}
+                                onChange={(e) => setEditTodoForm({ ...editTodoForm, description: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                rows={2}
+                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Category"
+                                  value={editTodoForm.category || ''}
+                                  onChange={(e) => setEditTodoForm({ ...editTodoForm, category: e.target.value })}
+                                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <input
+                                  type="date"
+                                  value={editTodoForm.due_date || ''}
+                                  onChange={(e) => setEditTodoForm({ ...editTodoForm, due_date: e.target.value })}
+                                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <select
+                                value={editTodoForm.priority}
+                                onChange={(e) => setEditTodoForm({ ...editTodoForm, priority: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="Low">Low Priority</option>
+                                <option value="Medium">Medium Priority</option>
+                                <option value="High">High Priority</option>
+                              </select>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    updateTodoMutation.mutate({ 
+                                      id: todo.id, 
+                                      data: {
+                                        task: editTodoForm.task,
+                                        description: editTodoForm.description || null,
+                                        category: editTodoForm.category || null,
+                                        due_date: editTodoForm.due_date || null,
+                                        priority: editTodoForm.priority
+                                      }
+                                    });
+                                  }}
+                                  disabled={!editTodoForm.task.trim() || updateTodoMutation.isPending}
+                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingTodo(null);
+                                    setEditTodoForm({ task: '', description: '', category: '', due_date: '', priority: 'Medium' });
+                                  }}
+                                  className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             </div>
+                          ) : (
+                            <>
+                              <div className={`text-sm font-medium ${todo.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                {todo.task}
+                              </div>
+                              {todo.description && (
+                                <div className={`text-xs mt-1 ${todo.completed ? 'text-slate-400' : 'text-slate-600'}`}>
+                                  {todo.description}
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                {todo.due_date && (
+                                  <span className={`${isOverdue ? 'text-red-600 font-semibold' : isToday ? 'text-orange-600 font-semibold' : ''}`}>
+                                    {isToday ? 'Today' : isOverdue ? `Dec ${dueDate.getDate()}` : `Dec ${dueDate.getDate()}`}
+                                  </span>
+                                )}
+                                {todo.category && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{todo.category}</span>
+                                  </>
+                                )}
+                                {todo.priority && (
+                                  <>
+                                    <span>•</span>
+                                    <span className={`${todo.priority === 'High' ? 'text-red-600' : todo.priority === 'Medium' ? 'text-orange-600' : 'text-slate-500'}`}>
+                                      {todo.priority}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </>
                           )}
-                          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                            {todo.due_date && (
-                              <span className={`${isOverdue ? 'text-red-600 font-semibold' : isToday ? 'text-orange-600 font-semibold' : ''}`}>
-                                {isToday ? 'Today' : isOverdue ? `Dec ${dueDate.getDate()}` : `Dec ${dueDate.getDate()}`}
-                              </span>
-                            )}
-                            {todo.category && (
-                              <>
-                                <span>•</span>
-                                <span>{todo.category}</span>
-                              </>
-                            )}
-                          </div>
                         </div>
-                        {todo.priority === 'High' && !todo.completed && (
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        {editingTodo !== todo.id && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {todo.priority === 'High' && !todo.completed && (
+                              <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
+                            )}
+                            <button
+                              onClick={() => {
+                                setEditingTodo(todo.id);
+                                setEditTodoForm({
+                                  task: todo.task || '',
+                                  description: todo.description || '',
+                                  category: todo.category || '',
+                                  due_date: todo.due_date || '',
+                                  priority: todo.priority || 'Medium'
+                                });
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="Edit todo"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Todo "${todo.task}" verwijderen?`)) {
+                                  deleteTodoMutation.mutate(todo.id);
+                                }
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="Delete todo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     );
