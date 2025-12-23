@@ -179,22 +179,30 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
         }
       }
 
-      // 4. Create notes/todos for everything that doesn't fit
+      // 4. Create notes for everything that doesn't fit
       if (parsedData.notes && Array.isArray(parsedData.notes) && parsedData.notes.length > 0) {
-        // Create todos as notes (since we might not have a Note entity, we use Todo)
-        // Or store in project description/notes field
+        // Create notes - find first page or create without page association
+        const firstPageId = parsedData.pages && parsedData.pages.length > 0 
+          ? parsedData.pages[0]?.id 
+          : null;
+        
         for (const noteText of parsedData.notes) {
           try {
-            // Create as a Todo attached to the project
-            await base44.entities.Todo.create({
-              page: null, // No specific page
-              task: noteText,
-              completed: false,
-              priority: 'Low'
+            // Extract title (first line or first 50 chars) and content
+            const lines = noteText.split('\n').filter(l => l.trim());
+            const title = lines[0]?.substring(0, 50) || 'Notitie';
+            const content = lines.length > 1 ? lines.slice(1).join('\n') : noteText;
+            
+            // Create as a Note (page can be null if no pages exist yet)
+            await base44.entities.Note.create({
+              page: firstPageId || null, // Associate with first page if available
+              title: title,
+              content: content,
+              color: 'blue'
             });
           } catch (err) {
-            console.error('Error creating note/todo:', err);
-            // If Todo creation fails, just log it - don't break the flow
+            console.error('Error creating note:', err);
+            // If Note creation fails, just log it - don't break the flow
           }
         }
       }
