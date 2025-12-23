@@ -9,7 +9,8 @@ import {
   User, ShieldCheck, CreditCard, Trash2, Settings as SettingsIcon, Bell, 
   Palette, Globe, Zap, Database, Cpu, Mic, Plus, Users, Key, Eye,
   Check, AlertCircle, X, Smartphone, Shield, Laptop, Monitor, LogOut,
-  CheckCircle2, AlertTriangle, Circle, ShieldAlert, ChevronDown, Edit2, Loader2
+  CheckCircle2, AlertTriangle, Circle, ShieldAlert, ChevronDown, Edit2, Loader2,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 export default function Settings() {
@@ -21,6 +22,7 @@ export default function Settings() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Get current user
   const { data: user } = useQuery({
@@ -123,113 +125,199 @@ export default function Settings() {
     <div className="flex flex-1 overflow-hidden h-full">
       
       {/* Left Sidebar */}
-      <aside className="w-[280px] bg-slate-50 border-r border-slate-200 overflow-hidden flex-none flex flex-col h-full">
-        <div className="p-4 space-y-8">
+      <aside className={`bg-slate-50 border-r border-slate-200 overflow-hidden flex-none flex flex-col h-full transition-all duration-300 ${sidebarCollapsed ? 'w-[64px]' : 'w-[280px]'}`}>
+        <div className="p-4 space-y-8 relative">
           
+          {/* Toggle Button */}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="absolute -right-3 top-4 w-6 h-6 bg-white border border-slate-300 rounded-full flex items-center justify-center hover:bg-slate-50 shadow-sm z-10 transition-colors"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            ) : (
+              <ChevronLeft className="w-3.5 h-3.5 text-slate-600" />
+            )}
+          </button>
+
           {/* Account Section */}
           <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Account</h3>
+            {!sidebarCollapsed && (
+              <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Account</h3>
+            )}
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <User className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-              <span className="text-[15px] font-medium">Profile</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Profile' : ''}
+            >
+              <User className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
+              {!sidebarCollapsed && (
+                <span className="text-[15px] font-medium">Profile</span>
+              )}
             </button>
 
-            <div className="flex items-center gap-3 px-3 py-2 bg-blue-50 text-blue-700 rounded-r-md border-l-[3px] border-blue-600 transition-colors -ml-4 pl-7 w-[calc(100%+16px)]">
-              <ShieldCheck className="w-[18px] h-[18px] text-blue-600" />
-              <span className="text-[15px] font-semibold">Password & Security</span>
+            <div className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 bg-blue-50 text-blue-700 rounded-r-md border-l-[3px] border-blue-600 transition-colors ${sidebarCollapsed ? '-ml-1' : '-ml-4 pl-7'} ${sidebarCollapsed ? 'w-auto' : 'w-[calc(100%+16px)]'}`}>
+              <ShieldCheck className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-blue-600`} />
+              {!sidebarCollapsed && (
+                <span className="text-[15px] font-semibold">Password & Security</span>
+              )}
             </div>
 
-            <button className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <div className="flex items-center gap-3">
-                <CreditCard className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-                <span className="text-[15px] font-medium">Billing</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Billing' : ''}
+            >
+              <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-3'}`}>
+                <CreditCard className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
+                {!sidebarCollapsed && (
+                  <span className="text-[15px] font-medium">Billing</span>
+                )}
               </div>
-              <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">PRO</span>
+              {!sidebarCollapsed && (
+                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">PRO</span>
+              )}
             </button>
 
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors group">
-              <Trash2 className="w-[18px] h-[18px] opacity-70" />
-              <span className="text-[15px] font-medium">Delete Account</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Delete Account' : ''}
+            >
+              <Trash2 className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} opacity-70`} />
+              {!sidebarCollapsed && (
+                <span className="text-[15px] font-medium">Delete Account</span>
+              )}
             </button>
           </div>
 
-          <div className="h-px bg-slate-200 mx-3"></div>
+          {!sidebarCollapsed && <div className="h-px bg-slate-200 mx-3"></div>}
 
           {/* Preferences Section */}
           <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preferences</h3>
+            {!sidebarCollapsed && (
+              <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preferences</h3>
+            )}
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <SettingsIcon className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-              <span className="text-[15px] font-medium">General</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'General' : ''}
+            >
+              <SettingsIcon className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
+              {!sidebarCollapsed && (
+                <span className="text-[15px] font-medium">General</span>
+              )}
             </button>
 
-            <button className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <div className="flex items-center gap-3">
-                <Bell className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-                <span className="text-[15px] font-medium">Notifications</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Notifications (3)' : ''}
+            >
+              <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-3'}`}>
+                <Bell className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
+                {!sidebarCollapsed && (
+                  <span className="text-[15px] font-medium">Notifications</span>
+                )}
               </div>
-              <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">3</div>
+              {!sidebarCollapsed && (
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">3</div>
+              )}
             </button>
 
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <Palette className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-              <span className="text-[15px] font-medium">Appearance</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Appearance' : ''}
+            >
+              <Palette className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
+              {!sidebarCollapsed && (
+                <span className="text-[15px] font-medium">Appearance</span>
+              )}
             </button>
 
-            <button className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <div className="flex items-center gap-3">
-                <Globe className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-                <span className="text-[15px] font-medium">Language</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Language' : ''}
+            >
+              <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-3'}`}>
+                <Globe className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
+                {!sidebarCollapsed && (
+                  <span className="text-[15px] font-medium">Language</span>
+                )}
               </div>
-              <span className="text-xs text-slate-400 font-medium">English</span>
+              {!sidebarCollapsed && (
+                <span className="text-xs text-slate-400 font-medium">English</span>
+              )}
             </button>
           </div>
 
-          <div className="h-px bg-slate-200 mx-3"></div>
+          {!sidebarCollapsed && <div className="h-px bg-slate-200 mx-3"></div>}
 
           {/* Integrations Section */}
           <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Integrations</h3>
+            {!sidebarCollapsed && (
+              <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Integrations</h3>
+            )}
             
             {integrations.map((integration, idx) => {
               const Icon = integration.icon;
               return (
-                <div key={idx} className="flex items-center justify-between px-3 py-2 text-slate-600 rounded-md group cursor-pointer hover:bg-slate-100">
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-[18px] h-[18px] text-slate-400" />
-                    <span className="text-[15px] font-medium">{integration.name}</span>
+                <div 
+                  key={idx} 
+                  className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3'} py-2 text-slate-600 rounded-md group cursor-pointer hover:bg-slate-100 relative`}
+                  title={sidebarCollapsed ? integration.name : ''}
+                >
+                  <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-3'}`}>
+                    <Icon className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400`} />
+                    {!sidebarCollapsed && (
+                      <span className="text-[15px] font-medium">{integration.name}</span>
+                    )}
                   </div>
-                  {integration.connected ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-emerald-50" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-slate-300" />
+                  {!sidebarCollapsed && (
+                    integration.connected ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-emerald-50" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-slate-300" />
+                    )
                   )}
                 </div>
               );
             })}
 
-            <button className="w-full text-left px-3 py-2 mt-2 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors flex items-center gap-2">
-              <Plus className="w-3 h-3" /> Add Integration
-            </button>
+            {!sidebarCollapsed && (
+              <button className="w-full text-left px-3 py-2 mt-2 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors flex items-center gap-2">
+                <Plus className="w-3 h-3" /> Add Integration
+              </button>
+            )}
           </div>
 
-          <div className="h-px bg-slate-200 mx-3"></div>
+          {!sidebarCollapsed && <div className="h-px bg-slate-200 mx-3"></div>}
 
           {/* Workspace Section */}
           <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Workspace</h3>
-            <button className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <div className="flex items-center gap-3">
-                <Users className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-                <span className="text-[15px] font-medium">Team</span>
+            {!sidebarCollapsed && (
+              <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Workspace</h3>
+            )}
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Team' : ''}
+            >
+              <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-3'}`}>
+                <Users className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
+                {!sidebarCollapsed && (
+                  <span className="text-[15px] font-medium">Team</span>
+                )}
               </div>
-              <span className="text-xs text-slate-400">1 member</span>
+              {!sidebarCollapsed && (
+                <span className="text-xs text-slate-400">1 member</span>
+              )}
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <Key className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-              <span className="text-[15px] font-medium">Roles & Permissions</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Roles & Permissions' : ''}
+            >
+              <Key className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} text-slate-400 group-hover:text-slate-600`} />
+              {!sidebarCollapsed && (
+                <span className="text-[15px] font-medium">Roles & Permissions</span>
+              )}
             </button>
           </div>
         </div>
