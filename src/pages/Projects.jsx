@@ -299,7 +299,8 @@ export default function Projects() {
                   </div>
                 </div>
               );
-            })}
+            })
+            )}
 
             {/* New Project Card */}
             <button 
