@@ -35,6 +35,7 @@ export default function ProjectReady() {
         const projectDataToSend = {
           name: setupData.name || 'Untitled Project',
           description: setupData.description || '',
+          company: setupData.company || null,
           app_type: setupData.platforms || ['Web'],
           product_type: setupData.appType || 'SaaS',
           ai_builder: setupData.aiBuilder?.primaryBuilder || 'Base44',

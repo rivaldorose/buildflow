@@ -12,6 +12,7 @@ export default function Projects() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
@@ -97,24 +98,44 @@ export default function Projects() {
   const totalPages = pages.length;
   const totalFeatures = features.length;
 
-  // Filter projects based on selected filter
+  // Get unique companies for filter
+  const uniqueCompanies = useMemo(() => {
+    const companies = projects
+      .map(p => p.company)
+      .filter(c => c && c.trim() !== '')
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort();
+    return companies;
+  }, [projects]);
+
+  // Filter projects based on selected filter and company filter
   const filteredProjects = useMemo(() => {
+    let filtered = projects;
+    
+    // First apply status filter
     if (filter === 'all') {
-      return projects;
+      filtered = projects;
     } else if (filter === 'active') {
       // Active = Building or Review status
-      return projects.filter(p => p.status === 'Building' || p.status === 'Review');
+      filtered = projects.filter(p => p.status === 'Building' || p.status === 'Review');
     } else if (filter === 'archived') {
       // Archived = Done status
-      return projects.filter(p => p.status === 'Done');
+      filtered = projects.filter(p => p.status === 'Done');
     } else if (filter === 'templates') {
       // Templates = projects with template status or type
-      return projects.filter(p => p.status === 'Template' || p.product_type?.toLowerCase().includes('template'));
+      filtered = projects.filter(p => p.status === 'Template' || p.product_type?.toLowerCase().includes('template'));
     } else {
       // Filter by exact status match (Planning, Building, Review, Done)
-      return projects.filter(p => p.status === filter);
+      filtered = projects.filter(p => p.status === filter);
     }
-  }, [projects, filter]);
+    
+    // Then apply company filter
+    if (companyFilter !== 'all') {
+      filtered = filtered.filter(p => p.company === companyFilter);
+    }
+    
+    return filtered;
+  }, [projects, filter, companyFilter]);
 
   // Get count text based on filter
   const getProjectCountText = () => {
@@ -154,8 +175,10 @@ export default function Projects() {
               </p>
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex items-center p-1 bg-white border border-slate-200 rounded-lg shadow-sm flex-wrap gap-1">
+            {/* Filters */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Status Filter Pills */}
+              <div className="flex items-center p-1 bg-white border border-slate-200 rounded-lg shadow-sm flex-wrap gap-1">
               <button 
                 onClick={() => setFilter('all')}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -196,6 +219,24 @@ export default function Projects() {
               >
                 Done
               </button>
+              </div>
+
+              {/* Company Filter Dropdown */}
+              {uniqueCompanies.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-500">Bedrijf:</span>
+                  <select
+                    value={companyFilter}
+                    onChange={(e) => setCompanyFilter(e.target.value)}
+                    className="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-colors shadow-sm"
+                  >
+                    <option value="all">Alle bedrijven</option>
+                    {uniqueCompanies.map(company => (
+                      <option key={company} value={company}>{company}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </header>
 

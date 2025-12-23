@@ -10,6 +10,7 @@ export default function NewProject() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',
+    company: '',
     appType: 'mobile',
     platforms: ['ios', 'android'],
     description: ''
@@ -115,6 +116,26 @@ export default function NewProject() {
                 )}
               </div>
               <p className="text-xs text-slate-500">Choose a unique, memorable name for your app workspace.</p>
+            </div>
+
+            {/* Company */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-semibold text-slate-700">
+                  Bedrijf / Company
+                </label>
+                <span className="text-xs text-slate-400 font-medium">Optioneel</span>
+              </div>
+              <div className="relative group">
+                <input 
+                  type="text" 
+                  placeholder="e.g., Konsensi, Acme Corp"
+                  value={form.company}
+                  onChange={(e) => setForm({ ...form, company: e.target.value.slice(0, 50) })}
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-[15px] shadow-sm"
+                />
+              </div>
+              <p className="text-xs text-slate-500">Filter projecten op bedrijf (bijv. alle apps van Konsensi).</p>
             </div>
 
             {/* App Icon */}

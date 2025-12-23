@@ -1085,7 +1085,18 @@ Provide a brief executive summary with key insights and next steps.`,
             <div className="flex items-center gap-3">
               {!isEditing ? (
                 <button 
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    setEditForm({
+                      name: project?.name || '',
+                      description: project?.description || '',
+                      status: project?.status || '',
+                      ai_builder: project?.ai_builder || '',
+                      product_type: project?.product_type || '',
+                      app_type: project?.app_type || [],
+                      company: project?.company || ''
+                    });
+                    setIsEditing(true);
+                  }}
                   className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Edit Project
@@ -1228,7 +1239,18 @@ Provide a brief executive summary with key insights and next steps.`,
                 </div>
                 {!isEditing ? (
                   <button 
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => {
+                      setEditForm({
+                        name: project?.name || '',
+                        description: project?.description || '',
+                        status: project?.status || '',
+                        ai_builder: project?.ai_builder || '',
+                        product_type: project?.product_type || '',
+                        app_type: project?.app_type || [],
+                        company: project?.company || ''
+                      });
+                      setIsEditing(true);
+                    }}
                     className="text-sm font-medium text-blue-600 hover:text-blue-700"
                   >
                     Edit
@@ -1343,6 +1365,16 @@ Provide a brief executive summary with key insights and next steps.`,
                         <option value="Mobile App">Mobile App</option>
                         <option value="Other">Other</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 block">Bedrijf / Company</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., Konsensi"
+                        value={editForm.company || ''}
+                        onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 block">App Type (Multiple)</label>
