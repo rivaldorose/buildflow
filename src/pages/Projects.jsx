@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { base44 } from '@/api/base44Client';
@@ -97,6 +97,45 @@ export default function Projects() {
   const totalPages = pages.length;
   const totalFeatures = features.length;
 
+  // Filter projects based on selected filter
+  const filteredProjects = useMemo(() => {
+    if (filter === 'all') {
+      return projects;
+    } else if (filter === 'active') {
+      // Active = Building or Review status
+      return projects.filter(p => p.status === 'Building' || p.status === 'Review');
+    } else if (filter === 'archived') {
+      // Archived = Done status
+      return projects.filter(p => p.status === 'Done');
+    } else if (filter === 'templates') {
+      // Templates = projects with template status or type
+      return projects.filter(p => p.status === 'Template' || p.product_type?.toLowerCase().includes('template'));
+    } else {
+      // Filter by exact status match (Planning, Building, Review, Done)
+      return projects.filter(p => p.status === filter);
+    }
+  }, [projects, filter]);
+
+  // Get count text based on filter
+  const getProjectCountText = () => {
+    if (filter === 'all') {
+      return `${projects.length} projecten`;
+    } else if (filter === 'active') {
+      return `${filteredProjects.length} actieve projecten`;
+    } else {
+      const filterLabels = {
+        'Planning': 'planning',
+        'Building': 'actieve',
+        'Review': 'review',
+        'Done': 'voltooide',
+        'archived': 'gearchiveerde',
+        'templates': 'template'
+      };
+      const label = filterLabels[filter] || filter.toLowerCase();
+      return `${filteredProjects.length} ${label} projecten`;
+    }
+  };
+
   return (
     <div className="flex-1 flex overflow-hidden">
       
@@ -109,7 +148,7 @@ export default function Projects() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">Your Projects</h1>
               <p className="text-slate-500 text-sm font-medium">
-                {projects.length} active projects • {totalPages} pages • {totalFeatures} features
+                {getProjectCountText()} • {totalPages} pages • {totalFeatures} features
               </p>
             </div>
 
@@ -153,7 +192,14 @@ export default function Projects() {
           {/* Projects Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
 
-            {projects.map((project, index) => {
+            {filteredProjects.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-slate-400 text-sm">
+                  {filter === 'all' ? 'Geen projecten gevonden' : `Geen ${filter === 'active' ? 'actieve' : filter === 'archived' ? 'gearchiveerde' : filter === 'templates' ? 'template' : filter.toLowerCase()} projecten gevonden`}
+                </p>
+              </div>
+            ) : (
+              filteredProjects.map((project, index) => {
               const stats = getProjectStats(project.id);
               const progress = project.progress || 0;
               
