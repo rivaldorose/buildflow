@@ -1,20 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/config/supabase';
 import { 
   User, ShieldCheck, CreditCard, Trash2, Settings as SettingsIcon, Bell, 
   Palette, Globe, Zap, Database, Cpu, Mic, Plus, Users, Key, Eye,
   Check, AlertCircle, X, Smartphone, Shield, Laptop, Monitor, LogOut,
-  CheckCircle2, AlertTriangle, Circle, ShieldAlert, ChevronDown, Edit2
+  CheckCircle2, AlertTriangle, Circle, ShieldAlert, ChevronDown, Edit2, Loader2
 } from 'lucide-react';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Get current user
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me(),
+    retry: false
+  });
 
   const passwordStrength = () => {
     if (newPassword.length === 0) return { percent: 0, label: 'None', color: 'bg-slate-300' };
@@ -26,18 +39,39 @@ export default function Settings() {
   const strength = passwordStrength();
   const passwordsMatch = confirmPassword && newPassword === confirmPassword;
 
-  const activeSessions = [
-    { device: 'MacBook Pro • Chrome', icon: Laptop, location: 'Amsterdam, NL', ip: '192.168.1.1', lastActive: 'Active now', current: true },
-    { device: 'iPhone 13 • Safari', icon: Smartphone, location: 'Amsterdam, NL', ip: '192.168.1.45', lastActive: '2 hours ago', current: false },
-    { device: 'Windows PC • Edge', icon: Monitor, location: 'Rotterdam, NL', ip: '84.123.45.67', lastActive: '1 day ago', current: false }
-  ];
+  // Get current session info
+  const getCurrentSession = () => {
+    const userAgent = navigator.userAgent;
+    let device = 'Unknown Device';
+    let icon = Laptop;
+    
+    if (userAgent.includes('Mac')) {
+      device = 'Mac • ' + (userAgent.includes('Chrome') ? 'Chrome' : userAgent.includes('Safari') ? 'Safari' : 'Browser');
+      icon = Laptop;
+    } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+      device = 'iOS • ' + (userAgent.includes('Safari') ? 'Safari' : 'Browser');
+      icon = Smartphone;
+    } else if (userAgent.includes('Windows')) {
+      device = 'Windows • ' + (userAgent.includes('Chrome') ? 'Chrome' : userAgent.includes('Edge') ? 'Edge' : 'Browser');
+      icon = Monitor;
+    }
+    
+    return {
+      device,
+      icon,
+      location: 'Unknown',
+      ip: 'N/A',
+      lastActive: 'Active now',
+      current: true
+    };
+  };
 
-  const loginHistory = [
-    { date: 'Dec 19, 2024 14:35', device: '💻 MacBook Pro • Chrome', location: 'Amsterdam, NL', status: 'Success', suspicious: false },
-    { date: 'Dec 19, 2024 09:12', device: '📱 iPhone 13 • Safari', location: 'Amsterdam, NL', status: 'Success', suspicious: false },
-    { date: 'Dec 18, 2024 19:47', device: '💻 MacBook Pro • Chrome', location: 'Amsterdam, NL', status: 'Success', suspicious: false },
-    { date: 'Dec 15, 2024 11:23', device: 'Unknown • Chrome', location: 'Moscow, RU', status: 'Blocked', suspicious: true }
-  ];
+  const activeSessions = user ? [getCurrentSession()] : [];
+
+  // Login history - simplified version (in production, store this in database)
+  const loginHistory = user ? [
+    { date: new Date().toLocaleString('nl-NL'), device: '💻 ' + getCurrentSession().device, location: 'Current session', status: 'Success', suspicious: false }
+  ] : [];
 
   const integrations = [
     { name: 'Aura', icon: Zap, connected: true },
@@ -46,6 +80,44 @@ export default function Settings() {
     { name: 'ElevenLabs', icon: Mic, connected: false },
     { name: 'Stripe', icon: CreditCard, connected: true }
   ];
+
+  // Handle password change
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    if (!passwordsMatch) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
+    
+    try {
+      // Update password in Supabase
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Password updated successfully!');
+      
+      // Clear form
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error(error.message || 'Failed to update password');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -181,7 +253,7 @@ export default function Settings() {
                 <p className="text-sm text-slate-500 mt-1">Update your password regularly for security.</p>
               </div>
 
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-5" onSubmit={handlePasswordChange}>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Current Password</label>
                   <div className="relative group">
@@ -271,14 +343,22 @@ export default function Settings() {
                 <div className="pt-2 flex justify-end gap-3">
                   <button 
                     type="button"
-                    className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      setCurrentPassword('');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    }}
+                    disabled={isUpdatingPassword}
+                    className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit"
-                    className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all"
+                    disabled={isUpdatingPassword || !passwordsMatch || newPassword.length < 8}
+                    className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
+                    {isUpdatingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
                     Update Password
                   </button>
                 </div>
