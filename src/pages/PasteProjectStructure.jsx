@@ -132,9 +132,11 @@ Antwoord ALLEEN met de JSON, geen extra tekst.`;
       
       // More helpful error messages
       if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-        errorMessage = 'OpenAI API key is ongeldig. Controleer je API key in Vercel/Vercel environment variables.';
+        errorMessage = 'OpenAI API key is ongeldig. Controleer je API key in Vercel environment variables.';
       } else if (error.message.includes('429')) {
         errorMessage = 'OpenAI API rate limit bereikt. Wacht even en probeer opnieuw.';
+      } else if (error.message.includes('quota') || error.message.includes('exceeded')) {
+        errorMessage = 'OpenAI API quota overschreden. Voeg credits toe aan je OpenAI account: https://platform.openai.com/account/billing';
       } else if (error.message.includes('Failed to call OpenAI API')) {
         errorMessage = 'Kon niet verbinden met OpenAI API. Controleer je internetverbinding.';
       }
