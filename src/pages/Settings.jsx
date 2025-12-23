@@ -125,21 +125,21 @@ export default function Settings() {
     <div className="flex flex-1 overflow-hidden h-full">
       
       {/* Left Sidebar */}
-      <aside className={`bg-slate-50 border-r border-slate-200 overflow-hidden flex-none flex flex-col h-full transition-all duration-300 ${sidebarCollapsed ? 'w-[64px]' : 'w-[280px]'}`}>
-        <div className="p-4 space-y-8 relative">
-          
-          {/* Toggle Button */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -right-3 top-4 w-6 h-6 bg-white border border-slate-300 rounded-full flex items-center justify-center hover:bg-slate-50 shadow-sm z-10 transition-colors"
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            ) : (
-              <ChevronLeft className="w-3.5 h-3.5 text-slate-600" />
-            )}
-          </button>
+      <aside className={`bg-slate-50 border-r border-slate-200 overflow-hidden flex-none flex flex-col h-full transition-all duration-300 relative ${sidebarCollapsed ? 'w-[64px]' : 'w-[280px]'}`}>
+        {/* Toggle Button */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute -right-3 top-4 w-6 h-6 bg-white border border-slate-300 rounded-full flex items-center justify-center hover:bg-slate-50 shadow-sm z-20 transition-colors cursor-pointer"
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+          ) : (
+            <ChevronLeft className="w-3.5 h-3.5 text-slate-600" />
+          )}
+        </button>
+        
+        <div className="p-4 space-y-8 overflow-y-auto flex-1">
 
           {/* Account Section */}
           <div className="space-y-1">
