@@ -237,6 +237,10 @@ export default function ProjectDetail() {
       setAddingTodo(false);
       setNewTodoForm({ title: '', category: '', due_date: '', priority: 'Medium' });
       toast.success('Todo added');
+    },
+    onError: (error) => {
+      console.error('Error creating todo:', error);
+      toast.error('Failed to add todo: ' + (error.message || 'Unknown error'));
     }
   });
 
