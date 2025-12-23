@@ -62,13 +62,34 @@ export const Project = {
   },
   
   create: async (data) => {
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('User authentication error:', userError);
+      // For now, allow creating projects without user (for testing)
+      // In production, you might want to require authentication
+    }
+    
+    const projectData = {
+      ...data,
+      ...(user && { user_id: user.id }) // Only add user_id if user exists
+    };
+    
+    console.log('Creating project with data:', projectData);
+    
     const { data: result, error } = await supabase
       .from('projects')
-      .insert({ ...data, user_id: (await supabase.auth.getUser()).data.user?.id })
+      .insert(projectData)
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating project:', error);
+      throw error;
+    }
+    
+    console.log('Project created successfully:', result);
     return formatResponse(result);
   },
   

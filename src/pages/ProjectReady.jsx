@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 import { 
   X, Check, Settings2, Smartphone, Layers, Database, Bot, 
   CheckCircle2, Palette, ListTodo, Rocket, LayoutDashboard, 
@@ -105,6 +106,10 @@ export default function ProjectReady() {
         
       } catch (error) {
         console.error('Failed to create project:', error);
+        toast.error(`Failed to create project: ${error.message || error.toString()}`);
+        setIsCreating(false);
+      } finally {
+        setIsCreating(false);
       }
     };
 
