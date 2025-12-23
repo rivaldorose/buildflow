@@ -74,6 +74,8 @@ import Login from "./Login";
 
 import AIProjectGenerator from "./AIProjectGenerator";
 
+import PasteProjectStructure from "./PasteProjectStructure";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -150,6 +152,8 @@ const PAGES = {
     
     AIProjectGenerator: AIProjectGenerator,
     
+    PasteProjectStructure: PasteProjectStructure,
+    
 }
 
 function _getCurrentPage(url) {
@@ -217,6 +221,7 @@ function PagesContent() {
             <Route path="/SprintSetup" element={<LayoutWrapper><SprintSetup /></LayoutWrapper>} />
             <Route path="/UploadDesign" element={<LayoutWrapper><UploadDesign /></LayoutWrapper>} />
             <Route path="/AIProjectGenerator" element={<LayoutWrapper><AIProjectGenerator /></LayoutWrapper>} />
+            <Route path="/PasteProjectStructure" element={<LayoutWrapper><PasteProjectStructure /></LayoutWrapper>} />
         </Routes>
     );
 }
