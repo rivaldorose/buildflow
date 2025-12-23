@@ -26,7 +26,7 @@ export default function ProjectDetail() {
   const [showUnassignedPages, setShowUnassignedPages] = useState(false);
   const [addingUnassignedPage, setAddingUnassignedPage] = useState(false);
   const [addingTodo, setAddingTodo] = useState(false);
-  const [newTodoForm, setNewTodoForm] = useState({ title: '', description: '', category: '', due_date: '', priority: 'Medium' });
+  const [newTodoForm, setNewTodoForm] = useState({ title: '', description: '', category: 'debug', due_date: '', priority: 'Medium' });
   const [editingTodo, setEditingTodo] = useState(null);
   const [editTodoForm, setEditTodoForm] = useState({ task: '', description: '', category: '', due_date: '', priority: 'Medium' });
   const [showNewFlowDialog, setShowNewFlowDialog] = useState(false);
@@ -253,7 +253,7 @@ export default function ProjectDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries(['projectTodos', projectId]);
       setAddingTodo(false);
-      setNewTodoForm({ title: '', description: '', category: '', due_date: '', priority: 'Medium' });
+      setNewTodoForm({ title: '', description: '', category: 'debug', due_date: '', priority: 'Medium' });
       toast.success('Todo added');
     },
     onError: (error) => {
@@ -2430,6 +2430,9 @@ Provide a brief executive summary with key insights and next steps.`,
                           onClick={() => createTodoMutation.mutate({ 
                             task: newTodoForm.title, // Map title to task (database field)
                             description: newTodoForm.description || null,
+                            category: newTodoForm.category || 'debug',
+                            due_date: newTodoForm.due_date || null,
+                            priority: newTodoForm.priority || 'Medium',
                             project: projectId,
                             completed: false
                           })}

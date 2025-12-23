@@ -239,7 +239,27 @@ export default function CreatePage() {
                           </div>
                         </div>
 
-                        <button className={`w-full py-2.5 mt-2 text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 ${method.buttonStyle}`}>
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            try {
+                              if (method.id === 'aura') {
+                                navigate('/DesignWithAura');
+                              } else if (method.id === 'upload') {
+                                navigate('/UploadDesign');
+                              } else if (method.id === 'code') {
+                                navigate('/PasteCode');
+                              } else if (method.id === 'blank') {
+                                navigate('/PageDetails');
+                              }
+                            } catch (error) {
+                              console.error('Navigation error:', error);
+                              alert('Error navigating: ' + error.message);
+                            }
+                          }}
+                          className={`w-full py-2.5 mt-2 text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 ${method.buttonStyle}`}
+                        >
                           {method.buttonText} <ArrowRight className="w-4 h-4" />
                         </button>
                         
