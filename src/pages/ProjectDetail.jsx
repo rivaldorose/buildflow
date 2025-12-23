@@ -2354,8 +2354,9 @@ Provide a brief executive summary with key insights and next steps.`,
                   </button>
                 </div>
 
-                {/* Scrollable todo list */}
-                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                {/* Scrollable todo list - fixed height container */}
+                <div className="relative max-h-[600px] overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar" style={{ maxHeight: '600px' }}>
+                  <div className="space-y-3 pb-2">
                   {addingTodo && (
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3 mb-4">
                       <input
@@ -2479,7 +2480,7 @@ Provide a brief executive summary with key insights and next steps.`,
                       No todos yet
                     </div>
                   )}
-
+                  </div>
                 </div>
               </section>
 
