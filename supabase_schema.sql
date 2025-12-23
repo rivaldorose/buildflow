@@ -39,6 +39,8 @@ CREATE TABLE IF NOT EXISTS pages (
   name TEXT NOT NULL,
   purpose TEXT,
   description TEXT,
+  path TEXT DEFAULT '/',
+  status TEXT DEFAULT 'Todo',
   frontend_code TEXT,
   flow UUID,
   created_date TIMESTAMPTZ DEFAULT NOW(),
