@@ -234,9 +234,9 @@ export default function Home() {
                           </span>
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden w-24">
-                              <div className={`h-full rounded-full transition-all duration-1000 ${getProgressColor(project.status)}`} style={{ width: `${project.progress || 0}%` }}></div>
+                              <div className={`h-full rounded-full transition-all duration-1000 ${getProgressColor(project.status)}`} style={{ width: `${calculateProjectProgress(project.id)}%` }}></div>
                             </div>
-                            <span className="text-xs font-medium text-slate-600">{project.progress || 0}%</span>
+                            <span className="text-xs font-medium text-slate-600">{calculateProjectProgress(project.id)}%</span>
                           </div>
                         </div>
                         

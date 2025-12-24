@@ -91,6 +91,11 @@ export default function Projects() {
     queryFn: () => base44.entities.Page.list()
   });
 
+  const { data: todos = [] } = useQuery({
+    queryKey: ['projectTodos'],
+    queryFn: () => base44.entities.ProjectTodo.list()
+  });
+
   const getProjectStats = (projectId) => {
     const projectPages = pages.filter(p => p.project === projectId);
     const projectFeatures = features.filter(f => f.project === projectId);
@@ -102,6 +107,30 @@ export default function Projects() {
       featuresDone: doneFeatures,
       bugsCount: 0 // Could be calculated from features if we had bug tracking
     };
+  };
+
+  // Calculate project progress based on completed todos and features
+  const calculateProjectProgress = (projectId) => {
+    const projectTodos = todos.filter(t => t.project === projectId);
+    const projectFeatures = features.filter(f => f.project === projectId);
+    
+    if (projectTodos.length === 0 && projectFeatures.length === 0) {
+      return 0; // No todos or features = 0% progress
+    }
+    
+    // Weight: 70% todos, 30% features
+    const completedTodos = projectTodos.filter(t => t.completed).length;
+    const todosProgress = projectTodos.length > 0 
+      ? (completedTodos / projectTodos.length) * 70 
+      : 0;
+    
+    const completedFeatures = projectFeatures.filter(f => f.status === 'Done').length;
+    const featuresProgress = projectFeatures.length > 0 
+      ? (completedFeatures / projectFeatures.length) * 30 
+      : 0;
+    
+    const totalProgress = Math.round(todosProgress + featuresProgress);
+    return Math.min(100, Math.max(0, totalProgress)); // Clamp between 0 and 100
   };
 
   const getStatusColor = (status) => {
@@ -354,7 +383,7 @@ export default function Projects() {
             ) : (
               filteredProjects.map((project, index) => {
               const stats = getProjectStats(project.id);
-              const progress = project.progress || 0;
+              const progress = calculateProjectProgress(project.id);
               
               return (
                 <div key={project.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 group flex flex-col">
