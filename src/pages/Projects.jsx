@@ -139,11 +139,34 @@ export default function Projects() {
 
   // Get count text based on filter
   const getProjectCountText = () => {
+    const count = filteredProjects.length;
+    const totalCount = projects.length;
+    
+    // When company filter is active, show it in the count
+    if (companyFilter !== 'all') {
+      if (filter === 'all') {
+        return `${count} projecten voor ${companyFilter}`;
+      } else if (filter === 'active') {
+        return `${count} actieve projecten voor ${companyFilter}`;
+      } else {
+        const filterLabels = {
+          'Planning': 'planning',
+          'Building': 'actieve',
+          'Review': 'review',
+          'Done': 'voltooide',
+          'archived': 'gearchiveerde',
+          'templates': 'template'
+        };
+        const label = filterLabels[filter] || filter.toLowerCase();
+        return `${count} ${label} projecten voor ${companyFilter}`;
+      }
+    }
+    
     // When filter is 'all' or not active, show total number of projects
     if (filter === 'all') {
-      return `${projects.length} projecten`;
+      return `${totalCount} projecten`;
     } else if (filter === 'active') {
-      return `${filteredProjects.length} actieve projecten`;
+      return `${count} actieve projecten`;
     } else {
       // When a specific filter is active, show filtered count
       const filterLabels = {
@@ -155,7 +178,7 @@ export default function Projects() {
         'templates': 'template'
       };
       const label = filterLabels[filter] || filter.toLowerCase();
-      return `${filteredProjects.length} ${label} projecten`;
+      return `${count} ${label} projecten`;
     }
   };
 
@@ -221,22 +244,37 @@ export default function Projects() {
               </button>
               </div>
 
-              {/* Company Filter Dropdown */}
-              {uniqueCompanies.length > 0 && (
-                <div className="flex items-center gap-2">
+              {/* Company Filter - Always visible */}
+              <div className="flex items-center p-1 bg-white border border-slate-200 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2 px-3">
                   <span className="text-xs font-medium text-slate-500">Bedrijf:</span>
                   <select
                     value={companyFilter}
                     onChange={(e) => setCompanyFilter(e.target.value)}
-                    className="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-colors shadow-sm"
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium border-0 bg-transparent text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors cursor-pointer ${
+                      companyFilter !== 'all' ? 'text-blue-700 font-semibold' : ''
+                    }`}
                   >
                     <option value="all">Alle bedrijven</option>
-                    {uniqueCompanies.map(company => (
-                      <option key={company} value={company}>{company}</option>
-                    ))}
+                    {uniqueCompanies.length > 0 ? (
+                      uniqueCompanies.map(company => (
+                        <option key={company} value={company}>{company}</option>
+                      ))
+                    ) : (
+                      <option value="all" disabled>Geen bedrijven beschikbaar</option>
+                    )}
                   </select>
+                  {companyFilter !== 'all' && (
+                    <button
+                      onClick={() => setCompanyFilter('all')}
+                      className="ml-1 text-slate-400 hover:text-slate-600 transition-colors"
+                      title="Filter wissen"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </header>
 
@@ -246,8 +284,23 @@ export default function Projects() {
             {filteredProjects.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <p className="text-slate-400 text-sm">
-                  {filter === 'all' ? 'Geen projecten gevonden' : `Geen ${filter === 'active' ? 'actieve' : filter === 'archived' ? 'gearchiveerde' : filter === 'templates' ? 'template' : filter.toLowerCase()} projecten gevonden`}
+                  {companyFilter !== 'all' 
+                    ? `Geen projecten gevonden voor ${companyFilter}${filter !== 'all' ? ` met status "${filter}"` : ''}`
+                    : filter === 'all' 
+                      ? 'Geen projecten gevonden' 
+                      : `Geen ${filter === 'active' ? 'actieve' : filter === 'archived' ? 'gearchiveerde' : filter === 'templates' ? 'template' : filter.toLowerCase()} projecten gevonden`}
                 </p>
+                {(filter !== 'all' || companyFilter !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setFilter('all');
+                      setCompanyFilter('all');
+                    }}
+                    className="mt-3 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                  >
+                    Wis alle filters
+                  </button>
+                )}
               </div>
             ) : (
               filteredProjects.map((project, index) => {
