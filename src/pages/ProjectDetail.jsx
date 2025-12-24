@@ -2888,6 +2888,20 @@ Provide a brief executive summary with key insights and next steps.`,
             <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h2>
               <div className="space-y-3">
+                <button
+                  onClick={() => navigate(createPageUrl('SprintSetup') + `?projectId=${projectId}`)}
+                  className="w-full px-4 py-2.5 bg-[#6B46C1] hover:bg-[#553C9A] text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <Target className="w-4 h-4" />
+                  New Sprint
+                </button>
+                <button
+                  onClick={() => navigate(createPageUrl('Sprint') + `?projectId=${projectId}`)}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <Kanban className="w-4 h-4" />
+                  View Sprints
+                </button>
                 <button 
                   onClick={() => navigate(createPageUrl('CreatePage'))}
                   className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-left group"
@@ -2902,7 +2916,7 @@ Provide a brief executive summary with key insights and next steps.`,
                 </button>
                 <button 
                   onClick={() => navigate(createPageUrl('CreatePage'))}
-                  className="w-full py-2.5 mt-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm"
+                  className="w-full py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm"
                 >
                   + Create New Page
                 </button>
