@@ -3208,6 +3208,127 @@ DealMaker App
         </>
       )}
 
+      {/* Edit Costs Dialog */}
+      {editingCosts && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setEditingCosts(false)}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] bg-white rounded-2xl shadow-2xl z-50 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-white font-bold text-lg">Project Kosten</h2>
+                    <p className="text-green-100 text-sm">Bewerk de kosten voor dit project</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditingCosts(false)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">
+                    Totaal Kosten
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={costForm.currency}
+                      onChange={(e) => setCostForm({ ...costForm, currency: e.target.value })}
+                      className="px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="EUR">€ EUR</option>
+                      <option value="USD">$ USD</option>
+                      <option value="GBP">£ GBP</option>
+                    </select>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={costForm.total_cost || ''}
+                      onChange={(e) => setCostForm({ ...costForm, total_cost: parseFloat(e.target.value) || 0 })}
+                      className="flex-1 px-4 py-2 border-2 border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">
+                    Maandelijkse Kosten
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={costForm.monthly_cost || ''}
+                    onChange={(e) => setCostForm({ ...costForm, monthly_cost: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border-2 border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  Notities (optioneel)
+                </label>
+                <textarea
+                  value={costForm.cost_notes || ''}
+                  onChange={(e) => setCostForm({ ...costForm, cost_notes: e.target.value })}
+                  placeholder="Bijvoorbeeld: Hosting, tools, API kosten, etc."
+                  className="w-full h-24 px-4 py-3 border-2 border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setEditingCosts(false);
+                    if (project) {
+                      setCostForm({
+                        total_cost: project.total_cost || 0,
+                        monthly_cost: project.monthly_cost || 0,
+                        currency: project.currency || 'EUR',
+                        cost_notes: project.cost_notes || ''
+                      });
+                    }
+                  }}
+                  className="flex-1 px-4 py-2.5 border-2 border-slate-300 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors"
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={handleSaveCosts}
+                  disabled={updateProjectMutation.isPending}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
+                >
+                  {updateProjectMutation.isPending ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Opslaan...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Opslaan
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Paste Knowledge Dialog */}
       {showPasteKnowledgeDialog && (
         <>
