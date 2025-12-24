@@ -615,6 +615,7 @@ export default function Settings() {
               </div>
             </div>
           </section>
+            </>
           )}
         </div>
       </main>
