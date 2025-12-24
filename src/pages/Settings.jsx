@@ -23,6 +23,10 @@ export default function Settings() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Sidebar collapse state
   const [activeSection, setActiveSection] = useState('profile'); // 'profile' or 'security'
+  const [fullName, setFullName] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   // Get current user
   const { data: user } = useQuery({
@@ -30,6 +34,16 @@ export default function Settings() {
     queryFn: () => base44.auth.me(),
     retry: false
   });
+
+  // Initialize fullName when user data is loaded
+  React.useEffect(() => {
+    if (user?.user_metadata?.full_name) {
+      setFullName(user.user_metadata.full_name);
+    }
+    if (user?.user_metadata?.avatar_url) {
+      setAvatarPreview(user.user_metadata.avatar_url);
+    }
+  }, [user]);
 
   const passwordStrength = () => {
     if (newPassword.length === 0) return { percent: 0, label: 'None', color: 'bg-slate-300' };
@@ -74,6 +88,116 @@ export default function Settings() {
   const loginHistory = user ? [
     { date: new Date().toLocaleString('nl-NL'), device: '💻 ' + getCurrentSession().device, location: 'Current session', status: 'Success', suspicious: false }
   ] : [];
+
+  // Handle avatar upload
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload to Supabase Storage
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          ...currentUser.user_metadata,
+          avatar_url: publicUrl
+        }
+      });
+
+      if (updateError) throw updateError;
+
+      toast.success('Avatar updated successfully!');
+      
+      // Invalidate user query to refresh
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error(error.message || 'Failed to upload avatar');
+      setAvatarPreview(user?.user_metadata?.avatar_url || null);
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = ''; // Reset input
+    }
+  };
+
+  // Handle profile save
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    
+    if (!fullName.trim()) {
+      toast.error('Please enter a name');
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
+      // Update user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          ...currentUser.user_metadata,
+          full_name: fullName.trim()
+        }
+      });
+
+      if (updateError) throw updateError;
+
+      toast.success('Profile updated successfully!');
+      
+      // Invalidate user query to refresh
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // Handle password change
   const handlePasswordChange = async (e) => {
@@ -204,11 +328,26 @@ export default function Settings() {
                     <p className="text-sm text-slate-500 mt-1">Your account details and personal information.</p>
                   </div>
 
-                  <div className="space-y-6">
+                  <form onSubmit={handleSaveProfile} className="space-y-6">
                     {/* Avatar Section */}
                     <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      <div className="relative">
+                        {avatarPreview ? (
+                          <img 
+                            src={avatarPreview} 
+                            alt="Avatar" 
+                            className="w-20 h-20 rounded-full object-cover border-2 border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-slate-200">
+                            {user?.user_metadata?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                        )}
+                        {isUploadingAvatar && (
+                          <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 animate-spin text-white" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-slate-900">
@@ -216,10 +355,17 @@ export default function Settings() {
                         </h3>
                         <p className="text-sm text-slate-500 mt-1">{user?.email || 'No email'}</p>
                       </div>
-                      <button className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors flex items-center gap-2">
+                      <label className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer">
                         <Edit2 className="w-4 h-4" />
                         Change Avatar
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                          disabled={isUploadingAvatar}
+                        />
+                      </label>
                     </div>
 
                     {/* User Details */}
@@ -243,7 +389,8 @@ export default function Settings() {
                         <input 
                           type="text"
                           placeholder="Enter your full name"
-                          defaultValue={user?.user_metadata?.full_name || ''}
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
                           className="w-full h-11 px-4 text-base bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                         />
                       </div>
@@ -267,11 +414,16 @@ export default function Settings() {
                     </div>
 
                     <div className="pt-4 border-t border-slate-100">
-                      <button className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all flex items-center gap-2">
+                      <button 
+                        type="submit"
+                        disabled={isSavingProfile}
+                        className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSavingProfile && <Loader2 className="w-4 h-4 animate-spin" />}
                         Save Changes
                       </button>
                     </div>
-                  </div>
+                  </form>
                 </div>
               </section>
             </>

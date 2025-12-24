@@ -97,7 +97,7 @@ export default function Home() {
       <header className="flex items-end justify-between mb-10">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
-            Welcome back, {user?.full_name?.split(' ')[0] || 'there'}! 👋
+            Welcome back, {user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'}! 👋
           </h1>
           <p className="text-slate-500 font-medium">
             You have <span className="text-slate-900 font-semibold">{activeProjects} active projects</span> and <span className="text-slate-900 font-semibold">{features.filter(f => f.status !== 'Done').length} tasks</span> due this week

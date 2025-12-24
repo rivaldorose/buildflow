@@ -116,11 +116,21 @@ export default function Layout({ children, currentPageName }) {
             <div className="h-6 w-px bg-slate-200"></div>
             {user ? (
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
-                  {user?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
-                </div>
+                {user?.user_metadata?.avatar_url ? (
+                  <img 
+                    src={user.user_metadata.avatar_url} 
+                    alt="Avatar" 
+                    className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
+                    {user?.user_metadata?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
                 <div className="text-left hidden lg:block">
-                  <div className="text-xs font-semibold text-slate-900">{user?.full_name || user?.email || 'User'}</div>
+                  <div className="text-xs font-semibold text-slate-900">
+                    {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                  </div>
                   <div className="text-[10px] text-slate-500">{user?.role === 'admin' ? 'Admin' : 'User'}</div>
                 </div>
               </div>
