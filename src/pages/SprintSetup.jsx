@@ -52,7 +52,14 @@ export default function SprintSetup() {
     }
   }, [startDate, duration]);
 
-  // Get project data
+  // Get all projects for dropdown
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('-created_date'),
+    enabled: true
+  });
+
+  // Get selected project data
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
     queryFn: () => base44.entities.Project.filter({ id: projectId }).then(res => res[0]),
@@ -168,7 +175,7 @@ export default function SprintSetup() {
   };
 
   const workingDays = calculateWorkingDays();
-  const canCreate = sprintName.trim().length > 0 && sprintName.length <= 50;
+  const canCreate = sprintName.trim().length > 0 && sprintName.length <= 50 && projectId;
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen flex flex-col">

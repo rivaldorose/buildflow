@@ -96,17 +96,18 @@ CREATE INDEX IF NOT EXISTS idx_sprints_status ON public.sprints(status);
 CREATE INDEX IF NOT EXISTS idx_sprints_start_date ON public.sprints(start_date);
 CREATE INDEX IF NOT EXISTS idx_sprints_end_date ON public.sprints(end_date);
 
--- Create updated_at trigger
-CREATE OR REPLACE FUNCTION public.update_sprints_updated_at()
+-- Create updated_date trigger (matching existing schema)
+CREATE OR REPLACE FUNCTION public.update_sprints_updated_date()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.updated_at = NOW();
+  NEW.updated_date = NOW();
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_sprints_updated_at
+DROP TRIGGER IF EXISTS update_sprints_updated_date ON public.sprints;
+CREATE TRIGGER update_sprints_updated_date
   BEFORE UPDATE ON public.sprints
   FOR EACH ROW
-  EXECUTE FUNCTION public.update_sprints_updated_at();
+  EXECUTE FUNCTION public.update_sprints_updated_date();
 
