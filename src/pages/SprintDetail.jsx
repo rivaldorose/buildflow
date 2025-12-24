@@ -4,7 +4,7 @@ import { createPageUrl } from '../utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import {
+import { 
   ArrowLeft, Edit2, Edit3, Calendar, Zap, CheckCircle2, Clock,
   Target, CheckCircle, Rocket, TrendingUp, BarChart2, Settings,
   MoreVertical, Activity, KanbanSquare, Plus, UploadCloud,
@@ -40,13 +40,23 @@ export default function SprintDetail() {
     enabled: !!sprint?.project
   });
 
-  // Mock data for now - replace with actual API calls
-  const totalTasks = 20;
-  const completedTasks = 13;
-  const progress = Math.round((completedTasks / totalTasks) * 100);
+  // Get project todos for progress calculation
+  const { data: projectTodos = [] } = useQuery({
+    queryKey: ['projectTodos', sprint?.project],
+    queryFn: async () => {
+      if (!sprint?.project) return [];
+      return await base44.entities.ProjectTodo.filter({ project: sprint.project });
+    },
+    enabled: !!sprint?.project
+  });
+
+  // Calculate real progress from todos
+  const totalTasks = projectTodos.length;
+  const completedTasks = projectTodos.filter(t => t.completed).length;
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   const daysLeft = sprint && sprint.end_date 
     ? Math.max(0, differenceInDays(new Date(sprint.end_date), new Date()))
-    : 5;
+    : 0;
 
   const getSprintDuration = () => {
     if (!sprint?.start_date || !sprint?.end_date) return 'TBD';
@@ -106,11 +116,11 @@ export default function SprintDetail() {
                 <div className="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                   <Edit2 className="w-4 h-4 text-white" />
                 </div>
-              </div>
+        </div>
 
               {/* Info Stack */}
               <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-[#1F2937] tracking-tight cursor-pointer hover:text-[#6B46C1] transition-colors">
                     {sprint.name || 'Untitled Sprint'}
                   </h1>
@@ -137,12 +147,12 @@ export default function SprintDetail() {
                   {sprint.start_date && (
                     <span className="text-xs text-slate-400 font-medium ml-1">
                       Started {format(new Date(sprint.start_date), 'MMM d, yyyy')}
-                    </span>
+                </span>
                   )}
                 </div>
               </div>
             </div>
-
+            
             {/* Right: Quick Stats & Actions */}
             <div className="flex flex-col lg:items-end gap-4 w-full lg:w-[40%]">
               {/* Quick Stats */}
@@ -151,20 +161,20 @@ export default function SprintDetail() {
                   <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5 w-32">
                     <span>Progress</span>
                     <span className="text-[#6B46C1]">{progress}%</span>
-                  </div>
+                </div>
                   <div className="w-32 bg-slate-200 rounded-full h-1.5 overflow-hidden">
                     <div
                       className="bg-[#6B46C1] h-1.5 rounded-full"
                       style={{ width: `${progress}%` }}
                     ></div>
-                  </div>
+              </div>
                 </div>
                 <div className="h-8 w-px bg-slate-200"></div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
                     <Zap className="w-3.5 h-3.5 text-[#F97316]" />
                     {sprint.name || 'Sprint'}
-                  </div>
+                </div>
                   <span className="text-[10px] font-mono text-slate-500 mt-0.5">{daysLeft} days left</span>
                 </div>
               </div>
@@ -253,13 +263,13 @@ export default function SprintDetail() {
                     style={{ width: `${progress}%` }}
                   >
                     <div className="absolute inset-0 bg-white/20 w-full h-full"></div>
-                  </div>
-                </div>
+              </div>
+            </div>
                 <div className="flex justify-between mt-2 text-xs font-medium text-slate-500">
                   <span>{completedTasks} tasks done</span>
                   <span>{totalTasks} total tasks</span>
-                </div>
-              </div>
+          </div>
+        </div>
 
               {/* Stats Grid */}
               <div className="relative z-10 grid grid-cols-3 gap-4 mb-8">
@@ -277,12 +287,12 @@ export default function SprintDetail() {
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
                   <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Blockers</div>
                   <div className="text-lg font-bold text-slate-400">0</div>
-                </div>
-              </div>
+                        </div>
+                      </div>
 
               {/* Objectives & Actions */}
               <div className="relative z-10 flex flex-col md:flex-row gap-8 border-t border-slate-100 pt-6">
-                <div className="flex-1">
+                      <div className="flex-1">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Key Objectives</h3>
                   <div className="space-y-2">
                     {objectives.length > 0 ? (
@@ -303,15 +313,15 @@ export default function SprintDetail() {
                                 : 'text-slate-700 font-medium'
                             }`}>
                               {objective.title || `Objective ${idx + 1}`}
-                            </span>
+                              </span>
                           </div>
                         );
                       })
                     ) : (
                       <p className="text-sm text-slate-400">No objectives defined</p>
-                    )}
-                  </div>
-                </div>
+                        )}
+                      </div>
+                    </div>
                 <div className="flex items-end gap-3">
                   <button className="px-5 py-2.5 bg-[#6B46C1] hover:bg-[#553C9A] text-white text-sm font-semibold rounded-lg shadow-sm transition-all hover:shadow-md active:scale-95 flex items-center gap-2">
                     <KanbanSquare className="w-4 h-4" />
@@ -320,8 +330,8 @@ export default function SprintDetail() {
                   <button className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors">
                     Add Task
                   </button>
-                </div>
-              </div>
+                      </div>
+                    </div>
             </section>
 
             {/* SECTION 2: PROJECT STATISTICS */}
@@ -340,7 +350,7 @@ export default function SprintDetail() {
                     className="bg-gradient-to-r from-[#6B46C1] to-[#4A90E2] h-1.5 rounded-full"
                     style={{ width: `${progress}%` }}
                   ></div>
-                </div>
+            </div>
                 <p className="text-[10px] text-slate-400">{completedTasks} of {totalTasks} tasks</p>
               </div>
 
@@ -368,8 +378,8 @@ export default function SprintDetail() {
                 <div className="flex items-center gap-1 text-[10px] text-[#10B981] font-medium">
                   <TrendingUp className="w-3 h-3" />
                   +12% this month
-                </div>
-              </div>
+            </div>
+          </div>
 
               {/* Stat 4 */}
               <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
@@ -382,7 +392,7 @@ export default function SprintDetail() {
                 <div className="text-3xl font-bold text-slate-900 font-mono mb-2">
                   {daysLeft}
                   <span className="text-base text-slate-400 font-sans ml-1">d</span>
-                </div>
+            </div>
                 <p className="text-[10px] text-slate-400">Days remaining</p>
               </div>
             </section>
@@ -419,10 +429,10 @@ export default function SprintDetail() {
                       <span className="font-semibold">You</span> updated sprint objectives
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">Yesterday at 3:42 PM</p>
-                  </div>
-                </div>
-              </div>
-              
+            </div>
+          </div>
+        </div>
+
               <button className="w-full mt-6 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors border border-dashed border-slate-200">
                 Show more activity
               </button>
@@ -451,9 +461,9 @@ export default function SprintDetail() {
                       <option>Completed</option>
                     </select>
                     <ChevronDown className="w-3 h-3 text-[#10B981] absolute right-1.5 top-1.5 pointer-events-none" />
-                  </div>
-                </div>
-                
+            </div>
+          </div>
+
                 {sprint.start_date && (
                   <div className="flex justify-between items-center py-2 border-b border-slate-50">
                     <span className="text-sm text-slate-500 font-medium">Start Date</span>
@@ -519,15 +529,15 @@ export default function SprintDetail() {
                             {initials}
                           </div>
                           <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
-                        </div>
+                </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold text-slate-900">Member {idx + 1}</h4>
                             <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">Member</span>
-                          </div>
+              </div>
                           <p className="text-xs text-slate-500">Active</p>
-                        </div>
-                      </div>
+                </div>
+              </div>
                     );
                   })
                 ) : (
@@ -535,7 +545,7 @@ export default function SprintDetail() {
                 )}
               </div>
             </div>
-
+            
             {/* Quick Actions */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6">
               <h3 className="text-base font-bold text-slate-900 mb-4">Quick Actions</h3>
@@ -549,13 +559,13 @@ export default function SprintDetail() {
                 <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:text-[#6B46C1] hover:border-[#6B46C1] hover:bg-purple-50 transition-all group text-left shadow-sm">
                   <div className="p-1.5 bg-slate-100 rounded text-slate-500 group-hover:bg-white group-hover:text-[#6B46C1] transition-colors">
                     <PlusSquare className="w-4 h-4" />
-                  </div>
+              </div>
                   Create Task
                 </button>
                 <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:text-[#6B46C1] hover:border-[#6B46C1] hover:bg-purple-50 transition-all group text-left shadow-sm">
                   <div className="p-1.5 bg-slate-100 rounded text-slate-500 group-hover:bg-white group-hover:text-[#6B46C1] transition-colors">
                     <UserPlus className="w-4 h-4" />
-                  </div>
+              </div>
                   Invite Member
                 </button>
               </div>
@@ -564,6 +574,6 @@ export default function SprintDetail() {
 
         </div>
       </main>
-    </div>
+      </div>
   );
 }
