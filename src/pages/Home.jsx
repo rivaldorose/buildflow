@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { base44 } from '@/api/base44Client';
@@ -43,7 +43,7 @@ export default function Home() {
 
   const { data: todos = [] } = useQuery({
     queryKey: ['todos'],
-    queryFn: () => base44.entities.Todo.list()
+    queryFn: () => base44.entities.ProjectTodo.list()
   });
 
   const isLoading = projectsLoading || featuresLoading;
