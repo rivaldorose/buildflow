@@ -258,11 +258,41 @@ export default function SprintSetup() {
             </div>
 
             <div className="space-y-8">
+              {/* Project Selection */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-700">
+                  Project <span className="text-[#6B46C1]">*</span>
+                </label>
+                <select
+                  value={selectedProjectId || ''}
+                  onChange={(e) => {
+                    const newProjectId = e.target.value;
+                    setSelectedProjectId(newProjectId);
+                    // Update URL without navigation
+                    if (newProjectId) {
+                      setSearchParams({ projectId: newProjectId });
+                    } else {
+                      setSearchParams({});
+                    }
+                  }}
+                  className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-[#6B46C1] focus:border-transparent block p-3 shadow-sm"
+                  required
+                >
+                  <option value="">Select a project...</option>
+                  {allProjects.map((proj) => (
+                    <option key={proj.id} value={proj.id}>
+                      {proj.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500">Select the project this sprint belongs to.</p>
+              </div>
+
               {/* Sprint Name */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-slate-700">
                   Sprint Name <span className="text-[#6B46C1]">*</span>
-            </label>
+                </label>
                 <div className="relative">
                   <input
                     type="text"
