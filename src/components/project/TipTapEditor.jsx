@@ -25,7 +25,9 @@ import {
   Trash2,
   Columns,
   Rows,
-  Merge
+  Merge,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +39,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function TipTapEditor({ content, onChange, placeholder = "Begin met schrijven..." }) {
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -112,9 +115,9 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
   const isInTable = editor.isActive('table');
 
   return (
-    <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
+    <div className={`border border-slate-200 rounded-lg bg-white overflow-hidden ${isFullscreen ? 'fixed inset-4 z-50 shadow-2xl' : ''}`}>
       {/* Toolbar */}
-      <div className="flex gap-1 p-2 border-b border-slate-200 bg-slate-50 flex-wrap items-center">
+      <div className="flex gap-1 p-2 border-b border-slate-200 bg-slate-50 flex-wrap items-center justify-between">
         <div className="flex gap-1 border-r border-slate-200 pr-2 mr-2">
           <Button
             type="button"
@@ -356,11 +359,21 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
           >
             <Redo className="w-4 h-4" />
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            style={{ padding: '4px 8px', minWidth: 'auto' }}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+          </Button>
         </div>
       </div>
 
       {/* Editor Content */}
-      <div className="min-h-[200px] max-h-[400px] overflow-y-auto p-4">
+      <div className={`overflow-y-auto p-6 ${isFullscreen ? 'h-[calc(100vh-120px)]' : 'min-h-[500px] max-h-[70vh]'}`}>
         <EditorContent editor={editor} />
       </div>
 
