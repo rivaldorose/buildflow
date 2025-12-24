@@ -1,536 +1,569 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  ChevronRight, Play, FileText, CheckCircle2, Loader2, MoreHorizontal,
-  Check, GripVertical, PartyPopper, Mic, Bot, BarChart3, Settings as SettingsIcon,
-  Plus, User, Book, CreditCard, Trophy, UserCircle, Clock, CalendarDays
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import {
+  ArrowLeft, Edit2, Edit3, Calendar, Zap, CheckCircle2, Clock,
+  Target, CheckCircle, Rocket, TrendingUp, BarChart2, Settings,
+  MoreVertical, Activity, KanbanSquare, Plus, UploadCloud,
+  FileText, Download, ExternalLink, ChevronDown, Square, CheckSquare,
+  UserPlus, PlusSquare
 } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
 
 export default function SprintDetail() {
   const navigate = useNavigate();
-  const urlParams = new URLSearchParams(window.location.search);
-  const sprintId = urlParams.get('id') || '2';
+  const [searchParams] = useSearchParams();
+  const sprintId = searchParams.get('id');
+  const queryClient = useQueryClient();
 
-  const { data: pages = [] } = useQuery({
-    queryKey: ['pages'],
-    queryFn: () => base44.entities.Page.list()
+  // Get sprint data
+  const { data: sprint, isLoading: sprintLoading } = useQuery({
+    queryKey: ['sprint', sprintId],
+    queryFn: async () => {
+      const sprints = await base44.entities.Sprint.filter({ id: sprintId });
+      return sprints[0];
+    },
+    enabled: !!sprintId
   });
 
-  const { data: features = [] } = useQuery({
-    queryKey: ['features'],
-    queryFn: () => base44.entities.Feature.list()
+  // Get project data
+  const { data: project } = useQuery({
+    queryKey: ['project', sprint?.project],
+    queryFn: async () => {
+      if (!sprint?.project) return null;
+      const projects = await base44.entities.Project.filter({ id: sprint.project });
+      return projects[0];
+    },
+    enabled: !!sprint?.project
   });
 
-  const { data: todos = [] } = useQuery({
-    queryKey: ['todos'],
-    queryFn: () => base44.entities.Todo.list()
-  });
+  // Mock data for now - replace with actual API calls
+  const totalTasks = 20;
+  const completedTasks = 13;
+  const progress = Math.round((completedTasks / totalTasks) * 100);
+  const daysLeft = sprint && sprint.end_date 
+    ? Math.max(0, differenceInDays(new Date(sprint.end_date), new Date()))
+    : 5;
 
-  // Mock sprint data
-  const sprint = {
-    id: 2,
-    name: 'Sprint 2: Voice & AI Features',
-    status: 'Active',
-    startDate: 'Dec 16',
-    endDate: 'Dec 22, 2024',
-    daysLeft: 3,
-    progress: 60,
-    velocity: { current: 24, target: 32 },
-    pages: {
-      total: 5,
-      done: 3,
-      inProgress: 2
+  const getSprintDuration = () => {
+    if (!sprint?.start_date || !sprint?.end_date) return 'TBD';
+    const start = new Date(sprint.start_date);
+    const end = new Date(sprint.end_date);
+    const days = differenceInDays(end, start) + 1;
+    return `${format(start, 'MMM d')} - ${format(end, 'MMM d')} (${days} days)`;
+  };
+
+  const formatDateRange = (startDate, endDate) => {
+    if (!startDate || !endDate) return 'TBD';
+    try {
+      return `${format(new Date(startDate), 'MMM d')} - ${format(new Date(endDate), 'MMM d')}`;
+    } catch {
+      return 'Invalid date';
     }
   };
 
-  const sprintPages = [
-    { 
-      id: 1, 
-      name: 'Onboarding Screen', 
-      icon: PartyPopper, 
-      status: 'done', 
-      features: 3, 
-      tested: '3/3', 
-      working: 3,
-      points: 5,
-      timeSpent: '6h',
-      assignee: 'JD',
-      finishedDate: 'Dec 18'
-    },
-    { 
-      id: 2, 
-      name: 'Voice Practice Screen', 
-      icon: Mic, 
-      status: 'testing', 
-      features: 5, 
-      progress: 60,
-      working: 2,
-      partial: 1,
-      bug: '#23',
-      points: 8,
-      timeSpent: '8h / 12h',
-      dueDate: 'Dec 20',
-      assignee: 'avatar'
-    },
-    { 
-      id: 3, 
-      name: 'AI Response Screen', 
-      icon: Bot, 
-      status: 'testing', 
-      features: 4, 
-      progress: 50,
-      working: 2,
-      points: 6,
-      timeSpent: '4h / 8h',
-      dueDate: 'Dec 21',
-      assignee: 'AL'
-    },
-    { 
-      id: 4, 
-      name: 'Results Screen', 
-      icon: BarChart3, 
-      status: 'todo', 
-      features: 4,
-      points: 5,
-      dueDate: 'Dec 22',
-      blocked: 'Voice Practice'
-    },
-    { 
-      id: 5, 
-      name: 'Settings Screen', 
-      icon: SettingsIcon, 
-      status: 'todo', 
-      features: 3,
-      points: 3,
-      dueDate: 'Dec 22'
-    }
-  ];
+  if (sprintLoading) {
+    return (
+      <div className="bg-[#FAF8F5] min-h-screen flex items-center justify-center">
+        <div className="text-slate-500">Loading sprint...</div>
+      </div>
+    );
+  }
 
-  const backlogPages = [
-    { name: 'Lesson Library Screen', icon: Book, status: 'Ready', points: 8, features: 6, priority: 'High' },
-    { name: 'Subscription Flow', icon: CreditCard, status: 'Ready', points: 5, features: 4, priority: 'High' },
-    { name: 'Leaderboard Screen', icon: Trophy, status: 'Designed', points: 6, features: 5, priority: 'Medium' },
-    { name: 'Profile Customization', icon: UserCircle, status: 'Designed', points: 3, features: 3, priority: 'Low' }
-  ];
+  if (!sprint) {
+    return (
+      <div className="bg-[#FAF8F5] min-h-screen flex items-center justify-center">
+        <div className="text-slate-500">Sprint not found</div>
+      </div>
+    );
+  }
 
-  const getStatusColor = (status) => {
-    const colors = {
-      'done': 'border-l-green-500',
-      'testing': 'border-l-orange-500',
-      'todo': 'border-l-slate-300'
-    };
-    return colors[status] || 'border-l-slate-300';
-  };
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      'done': 'bg-green-50 text-green-700 border-green-100',
-      'testing': 'bg-orange-50 text-orange-700 border-orange-100 animate-pulse',
-      'todo': 'bg-slate-100 text-slate-500 border-slate-200'
-    };
-    return badges[status] || badges.todo;
-  };
-
-  const getStatusLabel = (status) => {
-    const labels = {
-      'done': 'Done',
-      'testing': 'Testing',
-      'todo': 'Not Started'
-    };
-    return labels[status] || status;
-  };
+  const objectives = sprint.objectives || [];
 
   return (
-    <main className="flex-1 overflow-y-auto">
-      <div className="max-w-[1440px] mx-auto p-8 pb-20">
-        
-        {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
-          <Link to={createPageUrl('Projects')} className="hover:text-slate-900 cursor-pointer">
-            Projects
-          </Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="hover:text-slate-900 cursor-pointer">DealMaker</span>
-          <ChevronRight className="w-4 h-4" />
-          <span className="font-medium text-slate-900">Sprint Planning</span>
+    <div className="bg-[#FAF8F5] min-h-screen flex flex-col">
+      {/* TOP BAR (Project Header) */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="px-6 lg:px-12 py-5">
+          {/* Back Link */}
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-colors text-sm font-medium mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to {project ? project.name : 'Sprints'}
+          </button>
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            {/* Left: Sprint Identity */}
+            <div className="flex items-start gap-5 w-full lg:w-[60%]">
+              {/* Sprint Icon */}
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#6B46C1] to-indigo-600 flex items-center justify-center text-white shadow-md shrink-0 cursor-pointer hover:opacity-90 transition-opacity relative group">
+                <Target className="w-7 h-7" />
+                <div className="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <Edit2 className="w-4 h-4 text-white" />
+                </div>
+              </div>
+
+              {/* Info Stack */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-[#1F2937] tracking-tight cursor-pointer hover:text-[#6B46C1] transition-colors">
+                    {sprint.name || 'Untitled Sprint'}
+                  </h1>
+                  <button className="text-slate-300 hover:text-slate-500">
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
+                {sprint.goal && (
+                  <p className="text-[#6B7280] text-base">{sprint.goal}</p>
+                )}
+                
+                <div className="flex items-center flex-wrap gap-3 mt-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-green-50 text-[#10B981] text-xs font-bold border border-green-100 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+                    {sprint.status === 'active' ? 'Active' : sprint.status || 'Active'}
+                  </span>
+                  {project && (
+                    <>
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-xs font-medium border border-slate-200">
+                        {project.name}
+                      </span>
+                    </>
+                  )}
+                  {sprint.start_date && (
+                    <span className="text-xs text-slate-400 font-medium ml-1">
+                      Started {format(new Date(sprint.start_date), 'MMM d, yyyy')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Quick Stats & Actions */}
+            <div className="flex flex-col lg:items-end gap-4 w-full lg:w-[40%]">
+              {/* Quick Stats */}
+              <div className="flex items-center gap-6 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5 w-32">
+                    <span>Progress</span>
+                    <span className="text-[#6B46C1]">{progress}%</span>
+                  </div>
+                  <div className="w-32 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-[#6B46C1] h-1.5 rounded-full"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+                <div className="h-8 w-px bg-slate-200"></div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                    <Zap className="w-3.5 h-3.5 text-[#F97316]" />
+                    {sprint.name || 'Sprint'}
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-500 mt-0.5">{daysLeft} days left</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3">
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors bg-white shadow-sm">
+                  <BarChart2 className="w-4 h-4" />
+                  Analytics
+                </button>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors bg-white shadow-sm">
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </button>
+                <button className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors bg-white shadow-sm">
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Sprint Header */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-8">
-          <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">{sprint.name}</h1>
-                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700 border border-green-100 text-xs font-semibold">
-                  <span className="relative w-2 h-2 rounded-full bg-green-500">
-                    <span className="absolute inset-0 rounded-full bg-green-500 animate-ping"></span>
-                  </span>
-                  {sprint.status}
-                </span>
-              </div>
-              <p className="text-slate-500 font-medium">
-                {sprint.startDate} - {sprint.endDate} 
-                <span className="text-slate-400 mx-2">•</span> 
-                <span className="text-orange-600 font-medium">{sprint.daysLeft} days remaining</span>
-              </p>
-            </div>
+        {/* Navigation Tabs */}
+        <nav className="flex items-center gap-8 px-6 lg:px-12 border-t border-slate-100 overflow-x-auto">
+          <button className="py-4 text-[15px] font-bold text-[#6B46C1] border-b-2 border-[#6B46C1] whitespace-nowrap">
+            Overview
+          </button>
+          <button className="py-4 text-[15px] font-medium text-slate-500 hover:text-[#6B46C1] border-b-2 border-transparent hover:border-[#6B46C1]/20 transition-all whitespace-nowrap">
+            Board
+          </button>
+          <button className="py-4 text-[15px] font-medium text-slate-500 hover:text-[#6B46C1] border-b-2 border-transparent hover:border-[#6B46C1]/20 transition-all whitespace-nowrap">
+            Tasks
+          </button>
+          <button className="py-4 text-[15px] font-medium text-slate-500 hover:text-[#6B46C1] border-b-2 border-transparent hover:border-[#6B46C1]/20 transition-all whitespace-nowrap">
+            Team
+          </button>
+        </nav>
+      </header>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 p-6 lg:p-12 max-w-[1600px] mx-auto w-full">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          
+          {/* LEFT COLUMN (Main) */}
+          <div className="xl:col-span-2 flex flex-col gap-8">
             
-            <div className="flex items-center gap-8 text-sm">
-              <div className="flex flex-col items-end">
-                <span className="text-slate-400 font-medium mb-1">Velocity</span>
-                <div className="flex items-center gap-2 text-slate-900 font-semibold">
-                  {sprint.velocity.current}/{sprint.velocity.target} pts
-                  <span className="text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-xs">On Track</span>
+            {/* SECTION 1: ACTIVE SPRINT */}
+            <section className="bg-white rounded-2xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.08),0_4px_8px_rgba(0,0,0,0.04)] card-transition p-8 border-l-[6px] border-l-[#10B981] relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-50">
+                <Activity className="w-32 h-32 text-green-50 -rotate-12" />
+              </div>
+
+              {/* Header */}
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="inline-flex items-center gap-1.5 bg-green-50 px-2.5 py-1 rounded-full text-xs font-bold text-[#10B981] border border-green-100 uppercase tracking-wide">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]"></span>
+                      </span>
+                      Active Sprint
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900">{sprint.name || 'Untitled Sprint'}</h2>
+                  <div className="flex items-center gap-2 mt-2 text-sm text-slate-500 font-medium">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    {getSprintDuration()}
+                  </div>
+                </div>
+                <div className="text-right hidden sm:block">
+                  <div className="text-3xl font-bold text-slate-900 font-mono">{daysLeft}</div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Days Left</div>
                 </div>
               </div>
-              <div className="flex items-center gap-6 border-l border-slate-100 pl-6">
-                <div className="flex items-center gap-2 text-slate-600">
-                  <FileText className="w-4 h-4 text-slate-400" />
-                  <span>{sprint.pages.total} Pages</span>
+
+              {/* Progress */}
+              <div className="relative z-10 mb-8">
+                <div className="flex items-end justify-between mb-2">
+                  <span className="text-sm font-semibold text-slate-700">Sprint Progress</span>
+                  <span className="text-sm font-mono font-bold text-[#10B981]">{progress}%</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>{sprint.pages.done} Done</span>
+                <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner">
+                  <div
+                    className="bg-[#10B981] h-3 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)] relative overflow-hidden"
+                    style={{ width: `${progress}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 w-full h-full"></div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <Loader2 className="w-4 h-4 text-orange-500 animate-spin" style={{ animationDuration: '3s' }} />
-                  <span>{sprint.pages.inProgress} In Progress</span>
+                <div className="flex justify-between mt-2 text-xs font-medium text-slate-500">
+                  <span>{completedTasks} tasks done</span>
+                  <span>{totalTasks} total tasks</span>
                 </div>
               </div>
-              <div className="pl-2">
-                <button className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-slate-900 transition-colors">
-                  <MoreHorizontal className="w-5 h-5" />
+
+              {/* Stats Grid */}
+              <div className="relative z-10 grid grid-cols-3 gap-4 mb-8">
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
+                  <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Health</div>
+                  <div className="text-lg font-bold text-[#10B981] flex items-center justify-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Good
+                  </div>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
+                  <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Velocity</div>
+                  <div className="text-lg font-bold text-[#6B46C1] font-mono">3.2</div>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
+                  <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Blockers</div>
+                  <div className="text-lg font-bold text-slate-400">0</div>
+                </div>
+              </div>
+
+              {/* Objectives & Actions */}
+              <div className="relative z-10 flex flex-col md:flex-row gap-8 border-t border-slate-100 pt-6">
+                <div className="flex-1">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Key Objectives</h3>
+                  <div className="space-y-2">
+                    {objectives.length > 0 ? (
+                      objectives.map((objective, idx) => {
+                        const isCompleted = objective.status === 'completed' || objective.priority === 'completed';
+                        return (
+                          <div key={idx} className="flex items-center gap-3 group/item cursor-pointer">
+                            <div className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                              isCompleted
+                                ? 'border-[#10B981] bg-[#10B981] text-white'
+                                : 'border-slate-300 group-hover/item:border-[#6B46C1]'
+                            }`}>
+                              {isCompleted && <CheckSquare className="w-3 h-3" />}
+                            </div>
+                            <span className={`text-sm ${
+                              isCompleted
+                                ? 'text-slate-500 line-through decoration-slate-300'
+                                : 'text-slate-700 font-medium'
+                            }`}>
+                              {objective.title || `Objective ${idx + 1}`}
+                            </span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="text-sm text-slate-400">No objectives defined</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-end gap-3">
+                  <button className="px-5 py-2.5 bg-[#6B46C1] hover:bg-[#553C9A] text-white text-sm font-semibold rounded-lg shadow-sm transition-all hover:shadow-md active:scale-95 flex items-center gap-2">
+                    <KanbanSquare className="w-4 h-4" />
+                    Open Board
+                  </button>
+                  <button className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors">
+                    Add Task
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 2: PROJECT STATISTICS */}
+            <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Stat 1 */}
+              <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-md bg-purple-50 text-[#6B46C1] group-hover:bg-[#6B46C1] group-hover:text-white transition-colors">
+                    <Target className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500">Total Progress</span>
+                </div>
+                <div className="text-3xl font-bold text-slate-900 font-mono mb-2">{progress}%</div>
+                <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-[#6B46C1] to-[#4A90E2] h-1.5 rounded-full"
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <p className="text-[10px] text-slate-400">{completedTasks} of {totalTasks} tasks</p>
+              </div>
+
+              {/* Stat 2 */}
+              <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-md bg-green-50 text-[#10B981] group-hover:bg-[#10B981] group-hover:text-white transition-colors">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500">Tasks Done</span>
+                </div>
+                <div className="text-3xl font-bold text-slate-900 font-mono mb-2">{completedTasks}</div>
+                <p className="text-[10px] text-slate-400">Out of {totalTasks} total</p>
+              </div>
+
+              {/* Stat 3 */}
+              <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-md bg-blue-50 text-[#4A90E2] group-hover:bg-[#4A90E2] group-hover:text-white transition-colors">
+                    <Rocket className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500">Avg Velocity</span>
+                </div>
+                <div className="text-3xl font-bold text-slate-900 font-mono mb-2">3.5</div>
+                <div className="flex items-center gap-1 text-[10px] text-[#10B981] font-medium">
+                  <TrendingUp className="w-3 h-3" />
+                  +12% this month
+                </div>
+              </div>
+
+              {/* Stat 4 */}
+              <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-md bg-orange-50 text-[#F97316] group-hover:bg-[#F97316] group-hover:text-white transition-colors">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500">Time Left</span>
+                </div>
+                <div className="text-3xl font-bold text-slate-900 font-mono mb-2">
+                  {daysLeft}
+                  <span className="text-base text-slate-400 font-sans ml-1">d</span>
+                </div>
+                <p className="text-[10px] text-slate-400">Days remaining</p>
+              </div>
+            </section>
+
+            {/* SECTION 3: RECENT ACTIVITY */}
+            <section className="bg-white rounded-2xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-900">Recent Activity</h3>
+                <button className="text-sm font-semibold text-[#6B46C1] hover:text-indigo-800">View All</button>
+              </div>
+              
+              <div className="relative pl-4 space-y-8 before:absolute before:left-[19px] before:top-2 before:bottom-4 before:w-px before:bg-slate-200">
+                {/* Mock activity items */}
+                <div className="relative flex gap-4 items-start group">
+                  <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-slate-200 border-2 border-white ring-1 ring-slate-100 group-hover:bg-[#6B46C1] transition-colors"></div>
+                  <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold border border-slate-200 shadow-sm">
+                    S
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-900">
+                      <span className="font-semibold">Sarah</span> completed a task
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">2 hours ago</p>
+                  </div>
+                </div>
+
+                <div className="relative flex gap-4 items-start group">
+                  <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-slate-200 border-2 border-white ring-1 ring-slate-100 group-hover:bg-[#6B46C1] transition-colors"></div>
+                  <div className="w-8 h-8 rounded-full bg-[#6B46C1] text-white flex items-center justify-center text-xs font-bold border border-white shadow-sm">
+                    You
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-900">
+                      <span className="font-semibold">You</span> updated sprint objectives
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">Yesterday at 3:42 PM</p>
+                  </div>
+                </div>
+              </div>
+              
+              <button className="w-full mt-6 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors border border-dashed border-slate-200">
+                Show more activity
+              </button>
+            </section>
+          </div>
+
+          {/* RIGHT COLUMN (Sidebar) */}
+          <div className="xl:col-span-1 flex flex-col gap-8">
+            
+            {/* Sprint Info Card */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-slate-900">Sprint Info</h3>
+                <button className="text-slate-400 hover:text-[#6B46C1]">
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                  <span className="text-sm text-slate-500 font-medium">Status</span>
+                  <div className="relative">
+                    <select className="appearance-none bg-green-50 text-[#10B981] text-xs font-bold pl-2 pr-6 py-1 rounded cursor-pointer border-none focus:ring-0">
+                      <option>Active</option>
+                      <option>Planning</option>
+                      <option>Completed</option>
+                    </select>
+                    <ChevronDown className="w-3 h-3 text-[#10B981] absolute right-1.5 top-1.5 pointer-events-none" />
+                  </div>
+                </div>
+                
+                {sprint.start_date && (
+                  <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                    <span className="text-sm text-slate-500 font-medium">Start Date</span>
+                    <span className="text-sm text-slate-900 font-medium">
+                      {format(new Date(sprint.start_date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                )}
+
+                {sprint.end_date && (
+                  <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                    <span className="text-sm text-slate-500 font-medium">End Date</span>
+                    <span className="text-sm text-slate-900 font-medium">
+                      {format(new Date(sprint.end_date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                )}
+
+                {sprint.duration_weeks && (
+                  <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                    <span className="text-sm text-slate-500 font-medium">Duration</span>
+                    <span className="text-sm text-slate-900 font-medium">{sprint.duration_weeks} weeks</span>
+                  </div>
+                )}
+
+                {project && (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm text-slate-500 font-medium">Project</span>
+                    <Link
+                      to={createPageUrl('ProjectDetail') + `?id=${project.id}`}
+                      className="text-sm text-[#6B46C1] hover:underline font-medium"
+                    >
+                      {project.name}
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Team Section */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-slate-900">
+                  Team <span className="text-slate-400 font-normal text-sm">
+                    ({sprint.team_members?.length || 0})
+                  </span>
+                </h3>
+                <button className="text-xs font-bold text-[#6B46C1] hover:bg-purple-50 px-2 py-1 rounded transition-colors">
+                  <UserPlus className="w-3 h-3 inline mr-1" />
+                  Invite
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {sprint.team_members && sprint.team_members.length > 0 ? (
+                  sprint.team_members.map((memberId, idx) => {
+                    const colors = ['bg-[#6B46C1]', 'bg-purple-500', 'bg-blue-500'];
+                    const initials = memberId.substring(0, 2).toUpperCase();
+                    return (
+                      <div key={idx} className="flex items-center gap-3 group cursor-pointer hover:bg-slate-50 p-2 -mx-2 rounded-lg transition-colors">
+                        <div className="relative">
+                          <div className={`w-9 h-9 rounded-full ${colors[idx % colors.length]} text-white flex items-center justify-center font-bold text-xs border-2 border-white shadow-sm`}>
+                            {initials}
+                          </div>
+                          <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-slate-900">Member {idx + 1}</h4>
+                            <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">Member</span>
+                          </div>
+                          <p className="text-xs text-slate-500">Active</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-slate-400">No team members assigned</p>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6">
+              <h3 className="text-base font-bold text-slate-900 mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:text-[#6B46C1] hover:border-[#6B46C1] hover:bg-purple-50 transition-all group text-left shadow-sm">
+                  <div className="p-1.5 bg-slate-100 rounded text-slate-500 group-hover:bg-white group-hover:text-[#6B46C1] transition-colors">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  Start New Sprint
+                </button>
+                <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:text-[#6B46C1] hover:border-[#6B46C1] hover:bg-purple-50 transition-all group text-left shadow-sm">
+                  <div className="p-1.5 bg-slate-100 rounded text-slate-500 group-hover:bg-white group-hover:text-[#6B46C1] transition-colors">
+                    <PlusSquare className="w-4 h-4" />
+                  </div>
+                  Create Task
+                </button>
+                <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:text-[#6B46C1] hover:border-[#6B46C1] hover:bg-purple-50 transition-all group text-left shadow-sm">
+                  <div className="p-1.5 bg-slate-100 rounded text-slate-500 group-hover:bg-white group-hover:text-[#6B46C1] transition-colors">
+                    <UserPlus className="w-4 h-4" />
+                  </div>
+                  Invite Member
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="flex items-center gap-4">
-            <span className="text-2xl font-bold text-slate-900 w-16">{sprint.progress}%</span>
-            <div className="flex-1 space-y-2">
-              <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-600 rounded-full relative overflow-hidden transition-all" 
-                  style={{ width: `${sprint.progress}%` }}
-                >
-                  <div className="absolute top-0 left-0 bottom-0 right-0 bg-white/20" 
-                    style={{ 
-                      backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)', 
-                      backgroundSize: '1rem 1rem' 
-                    }}
-                  ></div>
-                </div>
-              </div>
-              <div className="flex justify-between text-xs font-medium text-slate-400">
-                <span>{sprint.pages.done} of {sprint.pages.total} pages completed</span>
-                <span>Target: {sprint.pages.total} pages</span>
-              </div>
-            </div>
-          </div>
         </div>
-
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          
-          {/* LEFT COLUMN: Active Sprint */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-slate-900">Sprint 2 - In Progress</h2>
-              <span className="text-xs font-medium text-slate-500">Drag to reorder priority</span>
-            </div>
-
-            {sprintPages.map((page) => {
-              const Icon = page.icon;
-              const isDone = page.status === 'done';
-              const isTesting = page.status === 'testing';
-              const isTodo = page.status === 'todo';
-
-              return (
-                <div 
-                  key={page.id}
-                  className={`group relative bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border-l-[4px] ${getStatusColor(page.status)} ${isTodo ? 'opacity-90' : ''}`}
-                >
-                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 opacity-0 group-hover:opacity-100 cursor-grab">
-                    <GripVertical className="w-4 h-4" />
-                  </div>
-
-                  <div className="p-4 pl-8">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className={`w-[80px] h-[60px] rounded-lg border flex items-center justify-center shrink-0 ${
-                        isDone ? 'bg-slate-50 border-slate-100' :
-                        isTesting ? 'bg-orange-50/50 border-orange-100' :
-                        'bg-slate-50 border-slate-200 grayscale'
-                      }`}>
-                        <div className="w-8 h-8 rounded bg-white shadow-sm flex items-center justify-center">
-                          <Icon className={`w-4 h-4 ${
-                            isDone ? 'text-slate-400' :
-                            isTesting ? 'text-orange-500' :
-                            'text-slate-400'
-                          }`} />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-1">
-                          <h3 className={`font-bold ${isTodo ? 'text-slate-700' : 'text-slate-900'}`}>{page.name}</h3>
-                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadge(page.status)}`}>
-                            {isDone && <Check className="w-3 h-3" />}
-                            {getStatusLabel(page.status)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 mb-2">
-                          <span>{page.features} features{isTodo && ' planned'}</span>
-                          {page.progress !== undefined && (
-                            <div className="flex items-center gap-1.5">
-                              <div className="h-1.5 w-12 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-orange-500" style={{ width: `${page.progress}%` }}></div>
-                              </div>
-                              <span className="text-slate-600">{page.progress}%</span>
-                            </div>
-                          )}
-                          {isDone && (
-                            <>
-                              <span className="text-green-600 font-medium">✅ {page.tested} tested</span>
-                              <span className="text-green-600 font-medium">🟢 {page.working} working</span>
-                            </>
-                          )}
-                        </div>
-                        {(page.working || page.partial || page.bug || page.blocked) && (
-                          <div className="flex items-center gap-2 text-[11px]">
-                            {page.working && <span className="text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{page.working} working</span>}
-                            {page.partial && <span className="text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded">{page.partial} partial</span>}
-                            {page.bug && (
-                              <a href="#" className="text-red-600 bg-red-50 px-1.5 py-0.5 rounded hover:underline border border-red-100 flex items-center gap-1">
-                                ⚠️ Bug {page.bug}
-                              </a>
-                            )}
-                            {page.blocked && (
-                              <span className="text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 flex items-center gap-1">
-                                ⚠️ Blocked by {page.blocked}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                      <div className="flex items-center gap-4 text-xs text-slate-400 font-medium">
-                        <span className="px-2 py-1 rounded bg-slate-100 text-slate-600">{page.points} points</span>
-                        {page.finishedDate && <span>Finished {page.finishedDate}</span>}
-                        {page.dueDate && <span className={isTesting ? 'text-orange-600' : ''}>Due {page.dueDate}</span>}
-                        {page.timeSpent && <span>{page.timeSpent}</span>}
-                      </div>
-                      <div>
-                        {page.assignee === 'avatar' ? (
-                          <img 
-                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" 
-                            alt="User" 
-                            className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200"
-                          />
-                        ) : page.assignee ? (
-                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-bold ${
-                            page.assignee === 'JD' ? 'bg-indigo-100 border-indigo-200 text-indigo-700' :
-                            page.assignee === 'AL' ? 'bg-pink-100 border-pink-200 text-pink-700' :
-                            'border-slate-300 text-slate-400'
-                          }`}>
-                            {page.assignee}
-                          </div>
-                        ) : (
-                          <div className="w-6 h-6 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-[10px] text-slate-400">
-                            <User className="w-3 h-3" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Drop Zone */}
-            <div className="h-24 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-copy">
-              <Plus className="w-5 h-5 mb-1" />
-              <span className="text-sm font-medium">Drop pages here to add to sprint</span>
-            </div>
-
-            {/* Capacity Summary */}
-            <div className="bg-slate-100 rounded-lg p-4 border border-slate-200">
-              <div className="flex justify-between items-center text-sm font-medium text-slate-700 mb-2">
-                <span>Sprint Capacity</span>
-                <span className="text-green-600">89% Utilized</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-xs text-slate-500">
-                <div>Total: {sprint.pages.total} pages</div>
-                <div>Points: {sprint.velocity.current} / 27 completed</div>
-                <div>Velocity: On track 🟢</div>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: Backlog */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-slate-900">Sprint 3 (Planned)</h2>
-              <span className="text-xs font-medium text-slate-500">Starts Dec 23, 2024</span>
-            </div>
-
-            {backlogPages.map((page, idx) => {
-              const Icon = page.icon;
-              const priorityColor = {
-                'High': 'text-red-500',
-                'Medium': 'text-yellow-600',
-                'Low': 'text-blue-500'
-              }[page.priority] || 'text-slate-500';
-
-              return (
-                <div key={idx} className="group relative bg-slate-50 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:bg-white transition-all duration-200">
-                  <div className="p-4">
-                    <div className="flex items-start gap-4 mb-3">
-                      <div className="w-[60px] h-[45px] rounded bg-white border border-slate-200 flex items-center justify-center shrink-0">
-                        <Icon className="w-4 h-4 text-slate-400" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-bold text-slate-900 text-sm">{page.name}</h3>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            page.status === 'Ready' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                          }`}>
-                            {page.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <span className="bg-slate-200 text-slate-600 px-1.5 rounded">{page.points} pts</span>
-                          <span>{page.features} features</span>
-                          <span className="text-slate-400">•</span>
-                          <span className={`font-medium ${priorityColor}`}>{page.priority} Priority</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            <div className="text-center pt-2">
-              <span className="text-xs text-slate-400 font-medium">
-                ← Drag pages to Sprint 2 if capacity allows
-              </span>
-            </div>
-
-            {/* Backlog Summary */}
-            <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 border-dashed">
-              <div className="flex justify-between items-center text-sm font-medium text-slate-700 mb-2">
-                <span>Planning Summary</span>
-              </div>
-              <div className="space-y-1 text-xs text-slate-500">
-                <div>Next Sprint: 4 pages planned</div>
-                <div>Estimated: 22 story points</div>
-                <div>Recommended capacity: 20-24 points</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Analytics Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Burndown Chart */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-slate-900">Sprint Burndown</h3>
-              <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">2 pts behind ideal</span>
-            </div>
-            
-            <div className="relative h-[200px] w-full">
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <line x1="0" y1="0" x2="100" y2="0" stroke="#f1f5f9" strokeWidth="1"></line>
-                <line x1="0" y1="25" x2="100" y2="25" stroke="#f1f5f9" strokeWidth="1"></line>
-                <line x1="0" y1="50" x2="100" y2="50" stroke="#f1f5f9" strokeWidth="1"></line>
-                <line x1="0" y1="75" x2="100" y2="75" stroke="#f1f5f9" strokeWidth="1"></line>
-                <line x1="0" y1="100" x2="100" y2="100" stroke="#f1f5f9" strokeWidth="1"></line>
-                <line x1="0" y1="10" x2="100" y2="90" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="4"></line>
-                <polyline points="0,10 16,20 33,35 50,45" fill="none" stroke="#3b82f6" strokeWidth="2.5"></polyline>
-                <circle cx="50" cy="45" r="2.5" fill="#3b82f6" stroke="white" strokeWidth="1"></circle>
-              </svg>
-
-              <div className="flex justify-between text-[10px] text-slate-400 mt-2">
-                <span>Dec 16</span>
-                <span>17</span>
-                <span>18</span>
-                <span className="text-slate-900 font-bold">19 (Today)</span>
-                <span>20</span>
-                <span>21</span>
-                <span>22</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 mt-4 text-xs font-medium">
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <div className="w-3 h-0.5 border-t border-slate-400 border-dashed"></div> Ideal
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <div className="w-3 h-0.5 bg-blue-500 rounded"></div> Actual
-              </div>
-            </div>
-          </div>
-
-          {/* Velocity Chart */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-slate-900">Sprint Velocity</h3>
-              <div className="text-right">
-                <div className="text-xs text-slate-500">Average velocity</div>
-                <div className="text-sm font-bold text-slate-900">26 pts / sprint</div>
-              </div>
-            </div>
-
-            <div className="h-[200px] flex items-end justify-around gap-4 pb-2 relative">
-              <div className="absolute w-full top-[25%] border-t border-red-300 border-dashed flex justify-end">
-                <span className="text-[10px] text-red-400 -mt-4 bg-white px-1">Avg</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2 w-16 group">
-                <div className="text-xs font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">28</div>
-                <div className="w-full bg-emerald-100 rounded-t-md h-[160px] relative overflow-hidden group-hover:bg-emerald-200 transition-colors">
-                  <div className="absolute bottom-0 w-full bg-emerald-500 h-full"></div>
-                </div>
-                <span className="text-xs font-medium text-slate-600">Sprint 1</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2 w-16 group">
-                <div className="text-xs font-bold text-blue-600">24</div>
-                <div className="w-full bg-blue-100 rounded-t-md h-[135px] relative overflow-hidden group-hover:bg-blue-200 transition-colors ring-2 ring-blue-500 ring-offset-2">
-                  <div className="absolute bottom-0 w-full bg-blue-500 h-[75%] animate-pulse"></div>
-                </div>
-                <span className="text-xs font-bold text-slate-900">Sprint 2</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2 w-16 group">
-                <div className="text-xs font-bold text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">22</div>
-                <div className="w-full bg-slate-100 rounded-t-md h-[125px] relative overflow-hidden group-hover:bg-slate-200 transition-colors border-2 border-dashed border-slate-300"></div>
-                <span className="text-xs font-medium text-slate-400">Sprint 3</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-center gap-6 mt-4 text-xs font-medium">
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Completed
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div> In Progress
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <div className="w-2 h-2 rounded-full bg-slate-300"></div> Planned
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
