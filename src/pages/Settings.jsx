@@ -138,7 +138,7 @@ export default function Settings() {
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update user metadata
+      // Update user metadata (trigger will sync to users table)
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           ...currentUser.user_metadata,
@@ -147,6 +147,17 @@ export default function Settings() {
       });
 
       if (updateError) throw updateError;
+
+      // Also update users table directly (backup if trigger fails)
+      const { error: dbUpdateError } = await supabase
+        .from('users')
+        .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq('id', currentUser.id);
+
+      if (dbUpdateError) {
+        console.warn('Failed to update users table directly:', dbUpdateError);
+        // Don't throw - metadata update succeeded
+      }
 
       toast.success('Avatar updated successfully!');
       
@@ -177,7 +188,7 @@ export default function Settings() {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error('Not authenticated');
 
-      // Update user metadata
+      // Update user metadata (trigger will sync to users table)
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           ...currentUser.user_metadata,
@@ -186,6 +197,17 @@ export default function Settings() {
       });
 
       if (updateError) throw updateError;
+
+      // Also update users table directly (backup if trigger fails)
+      const { error: dbUpdateError } = await supabase
+        .from('users')
+        .update({ full_name: fullName.trim(), updated_at: new Date().toISOString() })
+        .eq('id', currentUser.id);
+
+      if (dbUpdateError) {
+        console.warn('Failed to update users table directly:', dbUpdateError);
+        // Don't throw - metadata update succeeded
+      }
 
       toast.success('Profile updated successfully!');
       
