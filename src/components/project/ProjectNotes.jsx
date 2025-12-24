@@ -7,6 +7,10 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import TipTapEditor from './TipTapEditor';
@@ -312,6 +316,12 @@ function TipTapViewer({ content }) {
       StarterKit,
       Link,
       Image,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: content || { type: 'doc', content: [] },
     editable: false,
@@ -369,6 +379,44 @@ function TipTapViewer({ content }) {
         .ProseMirror a {
           color: #3b82f6;
           text-decoration: underline;
+        }
+        .ProseMirror table {
+          border-collapse: collapse;
+          margin: 0.5em 0;
+          table-layout: fixed;
+          width: 100%;
+          overflow: hidden;
+        }
+        .ProseMirror td,
+        .ProseMirror th {
+          min-width: 1em;
+          border: 1px solid #cbd5e1;
+          padding: 6px 8px;
+          vertical-align: top;
+          box-sizing: border-box;
+          position: relative;
+        }
+        .ProseMirror th {
+          font-weight: bold;
+          text-align: left;
+          background-color: #f1f5f9;
+        }
+        .ProseMirror .selectedCell:after {
+          z-index: 2;
+          position: absolute;
+          content: "";
+          left: 0; right: 0; top: 0; bottom: 0;
+          background: rgba(59, 130, 246, 0.1);
+          pointer-events: none;
+        }
+        .ProseMirror .column-resize-handle {
+          position: absolute;
+          right: -2px;
+          top: 0;
+          bottom: -2px;
+          width: 4px;
+          background-color: #3b82f6;
+          pointer-events: none;
         }
       `}</style>
     </div>

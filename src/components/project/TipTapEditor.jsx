@@ -4,6 +4,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import { 
   Bold, 
   Italic, 
@@ -14,7 +18,8 @@ import {
   Undo,
   Redo,
   Link as LinkIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Table as TableIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -39,6 +44,12 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
       Placeholder.configure({
         placeholder,
       }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: content || '',
     onUpdate: ({ editor }) => {
@@ -79,6 +90,10 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
     }
+  };
+
+  const insertTable = () => {
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
   };
 
   return (
@@ -207,6 +222,17 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
           >
             <ImageIcon className="w-4 h-4" />
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={insertTable}
+            className={editor.isActive('table') ? 'bg-slate-200' : ''}
+            style={{ padding: '4px 8px', minWidth: 'auto' }}
+            title="Insert Table"
+          >
+            <TableIcon className="w-4 h-4" />
+          </Button>
         </div>
 
         <div className="flex gap-1">
@@ -285,6 +311,44 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
         .ProseMirror a {
           color: #3b82f6;
           text-decoration: underline;
+        }
+        .ProseMirror table {
+          border-collapse: collapse;
+          margin: 0.5em 0;
+          table-layout: fixed;
+          width: 100%;
+          overflow: hidden;
+        }
+        .ProseMirror td,
+        .ProseMirror th {
+          min-width: 1em;
+          border: 1px solid #cbd5e1;
+          padding: 6px 8px;
+          vertical-align: top;
+          box-sizing: border-box;
+          position: relative;
+        }
+        .ProseMirror th {
+          font-weight: bold;
+          text-align: left;
+          background-color: #f1f5f9;
+        }
+        .ProseMirror .selectedCell:after {
+          z-index: 2;
+          position: absolute;
+          content: "";
+          left: 0; right: 0; top: 0; bottom: 0;
+          background: rgba(59, 130, 246, 0.1);
+          pointer-events: none;
+        }
+        .ProseMirror .column-resize-handle {
+          position: absolute;
+          right: -2px;
+          top: 0;
+          bottom: -2px;
+          width: 4px;
+          background-color: #3b82f6;
+          pointer-events: none;
         }
       `}</style>
     </div>
