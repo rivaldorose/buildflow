@@ -90,6 +90,30 @@ export default function Home() {
     return `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} | ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
   };
 
+  // Calculate project progress based on completed todos and features
+  const calculateProjectProgress = (projectId) => {
+    const projectTodos = todos.filter(t => t.project === projectId);
+    const projectFeatures = features.filter(f => f.project === projectId);
+    
+    if (projectTodos.length === 0 && projectFeatures.length === 0) {
+      return 0; // No todos or features = 0% progress
+    }
+    
+    // Weight: 70% todos, 30% features
+    const completedTodos = projectTodos.filter(t => t.completed).length;
+    const todosProgress = projectTodos.length > 0 
+      ? (completedTodos / projectTodos.length) * 70 
+      : 0;
+    
+    const completedFeatures = projectFeatures.filter(f => f.status === 'Done').length;
+    const featuresProgress = projectFeatures.length > 0 
+      ? (completedFeatures / projectFeatures.length) * 30 
+      : 0;
+    
+    const totalProgress = Math.round(todosProgress + featuresProgress);
+    return Math.min(100, Math.max(0, totalProgress)); // Clamp between 0 and 100
+  };
+
   return (
     <div className="max-w-[1240px] w-full mx-auto px-6 py-10 pb-20">
       
