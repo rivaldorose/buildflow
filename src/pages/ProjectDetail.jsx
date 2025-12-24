@@ -10,7 +10,7 @@ import {
   Zap, GitBranch, GitCommit, Clock, CheckCircle2, Loader, FileText, 
   Lock, ArrowRight, Sparkles, Palette, CheckSquare, History, Check, 
   Plus, Code2, GitMerge, X, Lightbulb, Folder, FolderOpen, File, Pencil,
-  Target, Clipboard
+  Target, Clipboard, DollarSign, Euro, Save
 } from 'lucide-react';
 
 export default function ProjectDetail() {
@@ -62,6 +62,13 @@ export default function ProjectDetail() {
   const [showPasteKnowledgeDialog, setShowPasteKnowledgeDialog] = useState(false);
   const [knowledgePasteText, setKnowledgePasteText] = useState('');
   const [importingKnowledge, setImportingKnowledge] = useState(false);
+  const [editingCosts, setEditingCosts] = useState(false);
+  const [costForm, setCostForm] = useState({
+    total_cost: 0,
+    monthly_cost: 0,
+    currency: 'EUR',
+    cost_notes: ''
+  });
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ['project', projectId],
@@ -168,6 +175,7 @@ export default function ProjectDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries(['project', projectId]);
       setIsEditing(false);
+      setEditingCosts(false);
       toast.success('Project updated successfully');
     },
     onError: () => {
@@ -352,6 +360,17 @@ export default function ProjectDetail() {
     }
   }, [isEditing, project]);
 
+  useEffect(() => {
+    if (project) {
+      setCostForm({
+        total_cost: project.total_cost || 0,
+        monthly_cost: project.monthly_cost || 0,
+        currency: project.currency || 'EUR',
+        cost_notes: project.cost_notes || ''
+      });
+    }
+  }, [project]);
+
   const toggleAppType = (type) => {
     const currentTypes = editForm.app_type || [];
     if (currentTypes.includes(type)) {
@@ -363,6 +382,11 @@ export default function ProjectDetail() {
 
   const handleSave = () => {
     updateProjectMutation.mutate(editForm);
+  };
+
+  const handleSaveCosts = () => {
+    updateProjectMutation.mutate(costForm);
+    setEditingCosts(false);
   };
 
   const toggleFlow = (flowId) => {
@@ -1148,7 +1172,7 @@ Provide a brief executive summary with key insights and next steps.`,
       <div className="max-w-[1440px] mx-auto px-12 py-10 pb-24">
         
         {/* Top Metrics Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
           {/* Health Card */}
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-emerald-200 transition-colors">
             <div className="flex justify-between items-start mb-2">
@@ -1217,10 +1241,51 @@ Provide a brief executive summary with key insights and next steps.`,
               <div className="flex items-center gap-2 text-xs text-slate-600">
                 <FileText className="w-3.5 h-3.5 text-slate-400" /> {pages.filter(p => p.status === 'Done').length} Complete
               </div>
+            </div>
+          </div>
+
+          {/* Pages Card */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-200 transition-colors">
+            <div className="flex justify-between items-start mb-3">
+              <span className="font-semibold text-slate-900">Pages</span>
+              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] uppercase font-bold tracking-wide rounded border border-blue-100">
+                {pages.length} Total
+              </span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                <FileText className="w-3.5 h-3.5 text-slate-400" /> {pages.filter(p => p.status === 'Done').length} Complete
+              </div>
               <div className="flex items-center gap-2 text-xs text-slate-600">
                 <Clock className="w-3.5 h-3.5 text-slate-400" /> {pages.filter(p => p.status === 'Doing').length} In Progress
               </div>
             </div>
+          </div>
+
+          {/* Costs Card */}
+          <div 
+            onClick={() => setEditingCosts(true)}
+            className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-green-200 transition-colors cursor-pointer group"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <span className="font-semibold text-slate-900">Kosten</span>
+              <DollarSign className="w-5 h-5 text-green-600 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-4xl font-bold text-slate-900">
+                {project?.currency === 'EUR' ? '€' : project?.currency === 'USD' ? '$' : project?.currency || '€'}
+                {(project?.total_cost || 0).toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="text-xs text-slate-500 mb-2">
+              {project?.monthly_cost > 0 && (
+                <span>€{(project.monthly_cost || 0).toLocaleString('nl-NL', { minimumFractionDigits: 2 })}/maand</span>
+              )}
+              {!project?.monthly_cost && <span>Klik om kosten in te voeren</span>}
+            </div>
+            {project?.cost_notes && (
+              <div className="text-xs text-slate-400 italic truncate">{project.cost_notes}</div>
+            )}
           </div>
         </div>
 
