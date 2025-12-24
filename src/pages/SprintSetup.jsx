@@ -13,9 +13,12 @@ import { format, addDays, addWeeks } from 'date-fns';
 
 export default function SprintSetup() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const projectId = searchParams.get('projectId');
   const queryClient = useQueryClient();
+  
+  // Local state for project selection (can be changed in form)
+  const [selectedProjectId, setSelectedProjectId] = useState(projectId || '');
 
   // Form state
   const [step, setStep] = useState(1);
@@ -59,11 +62,19 @@ export default function SprintSetup() {
     enabled: true
   });
 
+  // Sync selectedProjectId with URL projectId
+  useEffect(() => {
+    if (projectId && projectId !== selectedProjectId) {
+      setSelectedProjectId(projectId);
+    }
+  }, [projectId]);
+
   // Get selected project data
+  const effectiveProjectId = selectedProjectId || projectId;
   const { data: project } = useQuery({
-    queryKey: ['project', projectId],
-    queryFn: () => base44.entities.Project.filter({ id: projectId }).then(res => res[0]),
-    enabled: !!projectId
+    queryKey: ['project', effectiveProjectId],
+    queryFn: () => base44.entities.Project.filter({ id: effectiveProjectId }).then(res => res[0]),
+    enabled: !!effectiveProjectId
   });
 
   // Create sprint mutation
@@ -74,11 +85,12 @@ export default function SprintSetup() {
       return result;
     },
     onSuccess: (newSprint) => {
+      const effectiveProjectId = selectedProjectId || projectId;
       queryClient.invalidateQueries(['sprints']);
-      queryClient.invalidateQueries(['sprints', projectId]);
-      queryClient.invalidateQueries(['project', projectId]);
+      queryClient.invalidateQueries(['sprints', effectiveProjectId]);
+      queryClient.invalidateQueries(['project', effectiveProjectId]);
       toast.success('Sprint created successfully');
-      if (projectId) {
+      if (effectiveProjectId) {
         navigate(createPageUrl('SprintDetail') + `?id=${newSprint.id}`);
       } else {
         navigate(createPageUrl('Home'));
@@ -149,13 +161,14 @@ export default function SprintSetup() {
       return;
     }
 
-    if (!projectId) {
+    const effectiveProjectId = selectedProjectId || projectId;
+    if (!effectiveProjectId) {
       toast.error('No project selected. Please select a project first.');
       return;
     }
 
     const sprintData = {
-      project: projectId, // This should match the database column name
+      project: effectiveProjectId, // This should match the database column name
       name: sprintName,
       duration_weeks: duration === 'custom' ? null : parseInt(duration),
       start_date: startDate || null,
@@ -175,7 +188,8 @@ export default function SprintSetup() {
   };
 
   const workingDays = calculateWorkingDays();
-  const canCreate = sprintName.trim().length > 0 && sprintName.length <= 50 && projectId;
+  const effectiveProjectId = selectedProjectId || projectId;
+  const canCreate = sprintName.trim().length > 0 && sprintName.length <= 50 && effectiveProjectId;
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen flex flex-col">
