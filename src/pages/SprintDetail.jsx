@@ -8,7 +8,7 @@ import {
   ArrowLeft, Edit2, Edit3, Calendar, Zap, CheckCircle2, Clock,
   Target, CheckCircle, Rocket, TrendingUp, BarChart2, Settings,
   MoreVertical, Activity, KanbanSquare, Plus, UploadCloud,
-  FileText, Download, ExternalLink, ChevronDown, Square, CheckSquare,
+  FileText, Download, ExternalLink, ChevronDown, Square, Check,
   UserPlus, PlusSquare
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
@@ -295,7 +295,7 @@ export default function SprintDetail() {
                                 ? 'border-[#10B981] bg-[#10B981] text-white'
                                 : 'border-slate-300 group-hover/item:border-[#6B46C1]'
                             }`}>
-                              {isCompleted && <CheckSquare className="w-3 h-3" />}
+                              {isCompleted && <Check className="w-3 h-3" />}
                             </div>
                             <span className={`text-sm ${
                               isCompleted
