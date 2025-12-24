@@ -10,7 +10,7 @@ import {
   Zap, GitBranch, GitCommit, Clock, CheckCircle2, Loader, FileText, 
   Lock, ArrowRight, Sparkles, Palette, CheckSquare, History, Check, 
   Plus, Code2, GitMerge, X, Lightbulb, Folder, FolderOpen, File, Pencil,
-  Target, Clipboard, DollarSign, Euro, Save
+  Target, Clipboard, DollarSign, Euro, Save, Kanban
 } from 'lucide-react';
 
 export default function ProjectDetail() {

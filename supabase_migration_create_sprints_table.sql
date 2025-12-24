@@ -1,21 +1,50 @@
--- Migration: Create sprints table if it doesn't exist
+-- Migration: Add missing columns to sprints table
 -- Run this in Supabase SQL Editor
 
--- Create sprints table
-CREATE TABLE IF NOT EXISTS public.sprints (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  project UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  goal TEXT,
-  start_date DATE,
-  end_date DATE,
-  duration_weeks INTEGER,
-  status TEXT DEFAULT 'planning', -- planning, active, completed, paused
-  objectives JSONB, -- Array of objective objects
-  team_members TEXT[], -- Array of team member IDs
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Add missing columns to sprints table if they don't exist
+DO $$ 
+BEGIN
+  -- Add goal column
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'sprints' AND column_name = 'goal'
+  ) THEN
+    ALTER TABLE sprints ADD COLUMN goal TEXT;
+  END IF;
+
+  -- Add duration_weeks column
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'sprints' AND column_name = 'duration_weeks'
+  ) THEN
+    ALTER TABLE sprints ADD COLUMN duration_weeks INTEGER;
+  END IF;
+
+  -- Add objectives column (JSONB)
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'sprints' AND column_name = 'objectives'
+  ) THEN
+    ALTER TABLE sprints ADD COLUMN objectives JSONB;
+  END IF;
+
+  -- Add team_members column (TEXT array)
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'sprints' AND column_name = 'team_members'
+  ) THEN
+    ALTER TABLE sprints ADD COLUMN team_members TEXT[];
+  END IF;
+
+  -- Update status default if needed (check current default)
+  -- Note: This checks if status exists and updates default, but won't change existing values
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'sprints' AND column_name = 'status' AND column_default IS NULL
+  ) THEN
+    ALTER TABLE sprints ALTER COLUMN status SET DEFAULT 'planning';
+  END IF;
+END $$;
 
 -- Enable Row Level Security
 ALTER TABLE public.sprints ENABLE ROW LEVEL SECURITY;
