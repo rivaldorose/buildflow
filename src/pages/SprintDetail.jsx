@@ -282,11 +282,15 @@ export default function SprintDetail() {
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
                   <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Velocity</div>
-                  <div className="text-lg font-bold text-[#6B46C1] font-mono">3.2</div>
-                </div>
+                  <div className="text-lg font-bold text-[#6B46C1] font-mono">
+                    {sprint.start_date ? Math.round(completedTasks / Math.max(1, differenceInDays(new Date(), new Date(sprint.start_date)))) : 'N/A'}
+                  </div>
+            </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
                   <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Blockers</div>
-                  <div className="text-lg font-bold text-slate-400">0</div>
+                  <div className="text-lg font-bold text-slate-400">
+                    {projectTodos.filter(t => t.priority === 'High' && !t.completed).length}
+                  </div>
                         </div>
                       </div>
 
@@ -374,10 +378,11 @@ export default function SprintDetail() {
                   </div>
                   <span className="text-xs font-semibold text-slate-500">Avg Velocity</span>
                 </div>
-                <div className="text-3xl font-bold text-slate-900 font-mono mb-2">3.5</div>
-                <div className="flex items-center gap-1 text-[10px] text-[#10B981] font-medium">
-                  <TrendingUp className="w-3 h-3" />
-                  +12% this month
+                <div className="text-3xl font-bold text-slate-900 font-mono mb-2">
+                  {sprint.start_date ? Math.round(completedTasks / Math.max(1, differenceInDays(new Date(), new Date(sprint.start_date)))) : '0'}
+                </div>
+                <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                  Tasks per day
             </div>
           </div>
 
@@ -405,33 +410,30 @@ export default function SprintDetail() {
               </div>
               
               <div className="relative pl-4 space-y-8 before:absolute before:left-[19px] before:top-2 before:bottom-4 before:w-px before:bg-slate-200">
-                {/* Mock activity items */}
-                <div className="relative flex gap-4 items-start group">
-                  <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-slate-200 border-2 border-white ring-1 ring-slate-100 group-hover:bg-[#6B46C1] transition-colors"></div>
-                  <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold border border-slate-200 shadow-sm">
-                    S
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-slate-900">
-                      <span className="font-semibold">Sarah</span> completed a task
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">2 hours ago</p>
-                  </div>
-                </div>
-
-                <div className="relative flex gap-4 items-start group">
-                  <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-slate-200 border-2 border-white ring-1 ring-slate-100 group-hover:bg-[#6B46C1] transition-colors"></div>
-                  <div className="w-8 h-8 rounded-full bg-[#6B46C1] text-white flex items-center justify-center text-xs font-bold border border-white shadow-sm">
-                    You
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-slate-900">
-                      <span className="font-semibold">You</span> updated sprint objectives
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">Yesterday at 3:42 PM</p>
-            </div>
-          </div>
-        </div>
+                {projectTodos.filter(t => t.completed).slice(0, 5).map((todo, idx) => {
+                  // Try to parse updated_date or created_date for timestamp
+                  const todoDate = todo.updated_date || todo.created_date || new Date().toISOString();
+                  const dateStr = format(new Date(todoDate), 'MMM d, yyyy');
+                  
+                  return (
+                    <div key={todo.id || idx} className="relative flex gap-4 items-start group">
+                      <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-green-200 border-2 border-white ring-1 ring-slate-100 group-hover:bg-[#10B981] transition-colors"></div>
+                      <div className="w-8 h-8 rounded-full bg-[#6B46C1] text-white flex items-center justify-center text-xs font-bold border border-white shadow-sm">
+                        ✓
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-slate-900">
+                          <span className="font-semibold">Task completed:</span> {todo.task || 'Untitled task'}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">{dateStr}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {projectTodos.filter(t => t.completed).length === 0 && (
+                  <p className="text-sm text-slate-400 italic">No completed tasks yet</p>
+                )}
+              </div>
 
               <button className="w-full mt-6 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors border border-dashed border-slate-200">
                 Show more activity
