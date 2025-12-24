@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { base44 } from '@/api/base44Client';
@@ -7,7 +7,7 @@ import {
   Folder, FileText, Target, Bug, ArrowUp, ArrowDown, ArrowRight,
   Layers, Timer, CheckCircle, Calendar, Briefcase, Wind, Scale,
   PlusCircle, Square, CheckSquare, Clock, Palette, Code2, Rocket,
-  AlertTriangle
+  AlertTriangle, Sparkles
 } from 'lucide-react';
 import AuraPromptDialog from '../components/home/AuraPromptDialog';
 
@@ -43,7 +43,7 @@ export default function Home() {
 
   const { data: todos = [] } = useQuery({
     queryKey: ['todos'],
-    queryFn: () => base44.entities.Todo.list()
+    queryFn: () => base44.entities.ProjectTodo.list()
   });
 
   const isLoading = projectsLoading || featuresLoading;
@@ -90,6 +90,30 @@ export default function Home() {
     return `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} | ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
   };
 
+  // Calculate project progress based on completed todos and features
+  const calculateProjectProgress = (projectId) => {
+    const projectTodos = todos.filter(t => t.project === projectId);
+    const projectFeatures = features.filter(f => f.project === projectId);
+    
+    if (projectTodos.length === 0 && projectFeatures.length === 0) {
+      return 0; // No todos or features = 0% progress
+    }
+    
+    // Weight: 70% todos, 30% features
+    const completedTodos = projectTodos.filter(t => t.completed).length;
+    const todosProgress = projectTodos.length > 0 
+      ? (completedTodos / projectTodos.length) * 70 
+      : 0;
+    
+    const completedFeatures = projectFeatures.filter(f => f.status === 'Done').length;
+    const featuresProgress = projectFeatures.length > 0 
+      ? (completedFeatures / projectFeatures.length) * 30 
+      : 0;
+    
+    const totalProgress = Math.round(todosProgress + featuresProgress);
+    return Math.min(100, Math.max(0, totalProgress)); // Clamp between 0 and 100
+  };
+
   return (
     <div className="max-w-[1240px] w-full mx-auto px-6 py-10 pb-20">
       
@@ -97,7 +121,7 @@ export default function Home() {
       <header className="flex items-end justify-between mb-10">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
-            Welcome back, {user?.full_name?.split(' ')[0] || 'there'}! 👋
+            Welcome back, {user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'}! 👋
           </h1>
           <p className="text-slate-500 font-medium">
             You have <span className="text-slate-900 font-semibold">{activeProjects} active projects</span> and <span className="text-slate-900 font-semibold">{features.filter(f => f.status !== 'Done').length} tasks</span> due this week
@@ -234,9 +258,9 @@ export default function Home() {
                           </span>
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden w-24">
-                              <div className={`h-full rounded-full transition-all duration-1000 ${getProgressColor(project.status)}`} style={{ width: `${project.progress || 0}%` }}></div>
+                              <div className={`h-full rounded-full transition-all duration-1000 ${getProgressColor(project.status)}`} style={{ width: `${calculateProjectProgress(project.id)}%` }}></div>
                             </div>
-                            <span className="text-xs font-medium text-slate-600">{project.progress || 0}%</span>
+                            <span className="text-xs font-medium text-slate-600">{calculateProjectProgress(project.id)}%</span>
                           </div>
                         </div>
                         
@@ -264,13 +288,27 @@ export default function Home() {
                 );
               })}
 
-              {/* New Project Button */}
-              <button 
-                onClick={() => navigate(createPageUrl('ProjectSetup'))}
-                className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 font-medium"
-              >
-                <PlusCircle className="w-5 h-5" /> Create New Project
-              </button>
+              {/* New Project Buttons */}
+              <div className="space-y-3">
+                <button 
+                  onClick={() => navigate(createPageUrl('AIProjectGenerator'))}
+                  className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center gap-2 font-semibold shadow-lg shadow-purple-200"
+                >
+                  <Sparkles className="w-5 h-5" /> Create with AI
+                </button>
+                <button 
+                  onClick={() => navigate(createPageUrl('PasteProjectStructure'))}
+                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 font-semibold shadow-lg shadow-blue-200"
+                >
+                  <FileText className="w-5 h-5" /> Plak Project Structuur
+                </button>
+                <button 
+                  onClick={() => navigate(createPageUrl('ProjectSetup'))}
+                  className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 font-medium"
+                >
+                  <PlusCircle className="w-5 h-5" /> Create New Project
+                </button>
+              </div>
             </div>
           </section>
 

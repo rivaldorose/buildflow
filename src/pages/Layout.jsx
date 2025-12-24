@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from './utils';
+import { createPageUrl } from '../utils';
 import { 
   Layers,
   Plus,
@@ -114,15 +114,34 @@ export default function Layout({ children, currentPageName }) {
               New Project
             </Link>
             <div className="h-6 w-px bg-slate-200"></div>
-            <button className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
-                {user?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
+            {user ? (
+              <div className="flex items-center gap-2.5">
+                {user?.user_metadata?.avatar_url ? (
+                  <img 
+                    src={user.user_metadata.avatar_url} 
+                    alt="Avatar" 
+                    className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
+                    {user?.user_metadata?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+                <div className="text-left hidden lg:block">
+                  <div className="text-xs font-semibold text-slate-900">
+                    {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                  </div>
+                  <div className="text-[10px] text-slate-500">{user?.role === 'admin' ? 'Admin' : 'User'}</div>
+                </div>
               </div>
-              <div className="text-left hidden lg:block">
-                <div className="text-xs font-semibold text-slate-900">{user?.full_name || 'User'}</div>
-                <div className="text-[10px] text-slate-500">{user?.role === 'admin' ? 'Admin' : 'User'}</div>
-              </div>
-            </button>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center gap-2 text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Inloggen
+              </Link>
+            )}
           </div>
         </div>
       </nav>

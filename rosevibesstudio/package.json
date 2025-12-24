@@ -1,0 +1,22 @@
+{
+  "name": "rosevibesstudio",
+  "version": "1.0.0",
+  "description": "RoseVibesStudio - Creative Digital Experience Portfolio",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "portfolio",
+    "design",
+    "creative"
+  ],
+  "author": "RoseVibesStudio",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
+

@@ -38,7 +38,7 @@ import PageDetails from "./PageDetails";
 
 import PageTesting from "./PageTesting";
 
-import Pages from "./Pages";
+import PagesPage from "./Pages";
 
 import PasteCode from "./PasteCode";
 
@@ -69,6 +69,12 @@ import SprintPlanning from "./SprintPlanning";
 import SprintSetup from "./SprintSetup";
 
 import UploadDesign from "./UploadDesign";
+
+import Login from "./Login";
+
+import AIProjectGenerator from "./AIProjectGenerator";
+
+import PasteProjectStructure from "./PasteProjectStructure";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -112,7 +118,7 @@ const PAGES = {
     
     PageTesting: PageTesting,
     
-    Pages: Pages,
+    Pages: PagesPage,
     
     PasteCode: PasteCode,
     
@@ -144,6 +150,10 @@ const PAGES = {
     
     UploadDesign: UploadDesign,
     
+    AIProjectGenerator: AIProjectGenerator,
+    
+    PasteProjectStructure: PasteProjectStructure,
+    
 }
 
 function _getCurrentPage(url) {
@@ -159,90 +169,60 @@ function _getCurrentPage(url) {
     return pageName || Object.keys(PAGES)[0];
 }
 
-// Create a wrapper component that uses useLocation inside the Router context
-function PagesContent() {
+// Layout wrapper component
+function LayoutWrapper({ children }) {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
-    
+    return <Layout currentPageName={currentPage}>{children}</Layout>;
+}
+
+// Create a wrapper component that uses useLocation inside the Router context
+function PagesContent() {
     return (
-        <Layout currentPageName={currentPage}>
-            <Routes>            
-                
-                    <Route path="/" element={<AIBuilderPreferences />} />
-                
-                
-                <Route path="/AIBuilderPreferences" element={<AIBuilderPreferences />} />
-                
-                <Route path="/Activity" element={<Activity />} />
-                
-                <Route path="/AddFeatures" element={<AddFeatures />} />
-                
-                <Route path="/CreateDesignSystem" element={<CreateDesignSystem />} />
-                
-                <Route path="/CreatePage" element={<CreatePage />} />
-                
-                <Route path="/DesignComponents" element={<DesignComponents />} />
-                
-                <Route path="/DesignReview" element={<DesignReview />} />
-                
-                <Route path="/DesignSpacing" element={<DesignSpacing />} />
-                
-                <Route path="/DesignSystem" element={<DesignSystem />} />
-                
-                <Route path="/DesignSystemSetup" element={<DesignSystemSetup />} />
-                
-                <Route path="/DesignSystems" element={<DesignSystems />} />
-                
-                <Route path="/DesignTypography" element={<DesignTypography />} />
-                
-                <Route path="/DesignWithAura" element={<DesignWithAura />} />
-                
-                <Route path="/FlowBuilder" element={<FlowBuilder />} />
-                
-                <Route path="/Home" element={<Home />} />
-                
-                <Route path="/NewProject" element={<NewProject />} />
-                
-                <Route path="/PageDetail" element={<PageDetail />} />
-                
-                <Route path="/PageDetails" element={<PageDetails />} />
-                
-                <Route path="/PageTesting" element={<PageTesting />} />
-                
-                <Route path="/Pages" element={<Pages />} />
-                
-                <Route path="/PasteCode" element={<PasteCode />} />
-                
-                <Route path="/ProjectDetail" element={<ProjectDetail />} />
-                
-                <Route path="/ProjectReady" element={<ProjectReady />} />
-                
-                <Route path="/ProjectSetup" element={<ProjectSetup />} />
-                
-                <Route path="/ProjectTechStack" element={<ProjectTechStack />} />
-                
-                <Route path="/Projects" element={<Projects />} />
-                
-                <Route path="/ReviewCreatePage" element={<ReviewCreatePage />} />
-                
-                <Route path="/Security" element={<Security />} />
-                
-                <Route path="/SelectDesignTemplate" element={<SelectDesignTemplate />} />
-                
-                <Route path="/Settings" element={<Settings />} />
-                
-                <Route path="/Sprint" element={<Sprint />} />
-                
-                <Route path="/SprintDetail" element={<SprintDetail />} />
-                
-                <Route path="/SprintPlanning" element={<SprintPlanning />} />
-                
-                <Route path="/SprintSetup" element={<SprintSetup />} />
-                
-                <Route path="/UploadDesign" element={<UploadDesign />} />
-                
-            </Routes>
-        </Layout>
+        <Routes>
+            {/* Login route - without Layout */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* All other routes - with Layout */}
+            <Route path="/" element={<LayoutWrapper><AIBuilderPreferences /></LayoutWrapper>} />
+            <Route path="/AIBuilderPreferences" element={<LayoutWrapper><AIBuilderPreferences /></LayoutWrapper>} />
+            <Route path="/Activity" element={<LayoutWrapper><Activity /></LayoutWrapper>} />
+            <Route path="/AddFeatures" element={<LayoutWrapper><AddFeatures /></LayoutWrapper>} />
+            <Route path="/CreateDesignSystem" element={<LayoutWrapper><CreateDesignSystem /></LayoutWrapper>} />
+            <Route path="/CreatePage" element={<LayoutWrapper><CreatePage /></LayoutWrapper>} />
+            <Route path="/DesignComponents" element={<LayoutWrapper><DesignComponents /></LayoutWrapper>} />
+            <Route path="/DesignReview" element={<LayoutWrapper><DesignReview /></LayoutWrapper>} />
+            <Route path="/DesignSpacing" element={<LayoutWrapper><DesignSpacing /></LayoutWrapper>} />
+            <Route path="/DesignSystem" element={<LayoutWrapper><DesignSystem /></LayoutWrapper>} />
+            <Route path="/DesignSystemSetup" element={<LayoutWrapper><DesignSystemSetup /></LayoutWrapper>} />
+            <Route path="/DesignSystems" element={<LayoutWrapper><DesignSystems /></LayoutWrapper>} />
+            <Route path="/DesignTypography" element={<LayoutWrapper><DesignTypography /></LayoutWrapper>} />
+            <Route path="/DesignWithAura" element={<LayoutWrapper><DesignWithAura /></LayoutWrapper>} />
+            <Route path="/FlowBuilder" element={<LayoutWrapper><FlowBuilder /></LayoutWrapper>} />
+            <Route path="/Home" element={<LayoutWrapper><Home /></LayoutWrapper>} />
+            <Route path="/NewProject" element={<LayoutWrapper><NewProject /></LayoutWrapper>} />
+            <Route path="/PageDetail" element={<LayoutWrapper><PageDetail /></LayoutWrapper>} />
+            <Route path="/PageDetails" element={<LayoutWrapper><PageDetails /></LayoutWrapper>} />
+            <Route path="/PageTesting" element={<LayoutWrapper><PageTesting /></LayoutWrapper>} />
+            <Route path="/Pages" element={<LayoutWrapper><PagesPage /></LayoutWrapper>} />
+            <Route path="/PasteCode" element={<LayoutWrapper><PasteCode /></LayoutWrapper>} />
+            <Route path="/ProjectDetail" element={<LayoutWrapper><ProjectDetail /></LayoutWrapper>} />
+            <Route path="/ProjectReady" element={<LayoutWrapper><ProjectReady /></LayoutWrapper>} />
+            <Route path="/ProjectSetup" element={<LayoutWrapper><ProjectSetup /></LayoutWrapper>} />
+            <Route path="/ProjectTechStack" element={<LayoutWrapper><ProjectTechStack /></LayoutWrapper>} />
+            <Route path="/Projects" element={<LayoutWrapper><Projects /></LayoutWrapper>} />
+            <Route path="/ReviewCreatePage" element={<LayoutWrapper><ReviewCreatePage /></LayoutWrapper>} />
+            <Route path="/Security" element={<LayoutWrapper><Security /></LayoutWrapper>} />
+            <Route path="/SelectDesignTemplate" element={<LayoutWrapper><SelectDesignTemplate /></LayoutWrapper>} />
+            <Route path="/Settings" element={<LayoutWrapper><Settings /></LayoutWrapper>} />
+            <Route path="/Sprint" element={<LayoutWrapper><Sprint /></LayoutWrapper>} />
+            <Route path="/SprintDetail" element={<LayoutWrapper><SprintDetail /></LayoutWrapper>} />
+            <Route path="/SprintPlanning" element={<LayoutWrapper><SprintPlanning /></LayoutWrapper>} />
+            <Route path="/SprintSetup" element={<LayoutWrapper><SprintSetup /></LayoutWrapper>} />
+            <Route path="/UploadDesign" element={<LayoutWrapper><UploadDesign /></LayoutWrapper>} />
+            <Route path="/AIProjectGenerator" element={<LayoutWrapper><AIProjectGenerator /></LayoutWrapper>} />
+            <Route path="/PasteProjectStructure" element={<LayoutWrapper><PasteProjectStructure /></LayoutWrapper>} />
+        </Routes>
     );
 }
 

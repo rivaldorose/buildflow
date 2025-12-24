@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 import { 
   X, Check, Settings2, Smartphone, Layers, Database, Bot, 
   CheckCircle2, Palette, ListTodo, Rocket, LayoutDashboard, 
@@ -12,28 +13,42 @@ import {
 export default function ProjectReady() {
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
+  const hasCreatedProject = useRef(false);
 
   useEffect(() => {
     const createProjectInDatabase = async () => {
-      if (isCreating) return;
+      // Prevent multiple creations
+      if (hasCreatedProject.current || isCreating) return;
       
+      hasCreatedProject.current = true;
       setIsCreating(true);
       try {
         // Get data from localStorage
         const setupData = JSON.parse(localStorage.getItem('projectSetup') || '{}');
         
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:24',message:'Starting project creation',data:{hasSetupData:!!setupData,setupDataKeys:setupData?Object.keys(setupData):[],setupDataName:setupData?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
         console.log('Creating project with data:', setupData);
         
-        // Create project in database
-        const project = await base44.entities.Project.create({
+        const projectDataToSend = {
           name: setupData.name || 'Untitled Project',
           description: setupData.description || '',
+          company: setupData.company || null,
           app_type: setupData.platforms || ['Web'],
           product_type: setupData.appType || 'SaaS',
           ai_builder: setupData.aiBuilder?.primaryBuilder || 'Base44',
           status: 'Planning',
           progress: 0
-        });
+        };
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:38',message:'Project data to send',data:{projectDataKeys:Object.keys(projectDataToSend),projectDataValues:JSON.stringify(projectDataToSend)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
+        // Create project in database
+        const project = await base44.entities.Project.create(projectDataToSend);
 
         console.log('Project created:', project);
 
@@ -105,11 +120,33 @@ export default function ProjectReady() {
         
       } catch (error) {
         console.error('Failed to create project:', error);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/0d0ecb30-d292-41a4-8076-aaa48e196c12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectReady.jsx:112',message:'Project creation failed',data:{errorMessage:error?.message,errorName:error?.name,errorCode:error?.code,errorString:error?.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
+        // Extract user-friendly error message
+        let errorMessage = 'Failed to create project';
+        if (error?.message) {
+          errorMessage = error.message;
+        } else if (error?.code) {
+          errorMessage = `Error ${error.code}: ${error.message || 'Unknown error'}`;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
+        toast.error(errorMessage, {
+          description: error?.hint || error?.details || 'Please check the console for more details',
+          duration: 5000,
+        });
+        hasCreatedProject.current = false; // Reset on error so user can retry
+        setIsCreating(false);
+      } finally {
+        setIsCreating(false);
       }
     };
 
     createProjectInDatabase();
-  }, [isCreating]);
+  }, []); // Only run once on mount
 
   return (
     <div className="bg-slate-50 min-h-screen flex items-center justify-center p-4">

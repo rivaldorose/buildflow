@@ -37,10 +37,27 @@ export default function Pages() {
     queryFn: () => base44.entities.Todo.list()
   });
 
-  // Filter pages by selected project
-  const filteredPages = selectedProject 
+  // Filter pages by selected project and separate parent/child pages
+  const allFilteredPages = selectedProject 
     ? pages.filter(p => p.project === selectedProject)
     : pages;
+  
+  // Separate parent pages (no parent_page) and subpages (has parent_page)
+  const parentPages = allFilteredPages.filter(p => !p.parent_page);
+  const subpages = allFilteredPages.filter(p => p.parent_page);
+  
+  // Group subpages by parent
+  const subpagesByParent = subpages.reduce((acc, subpage) => {
+    const parentId = subpage.parent_page;
+    if (!acc[parentId]) {
+      acc[parentId] = [];
+    }
+    acc[parentId].push(subpage);
+    return acc;
+  }, {});
+  
+  // For display, we'll show parent pages with their subpages
+  const filteredPages = parentPages;
 
   const getStatusColor = (status) => {
     const colors = {
@@ -311,9 +328,15 @@ export default function Pages() {
                   {/* Info */}
                   <div className="p-5 flex-1 flex flex-col">
                     <div className="flex items-start justify-between mb-3">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-semibold text-slate-900 text-base mb-0.5">{page.name}</h3>
-                        <div className="text-xs text-slate-500 font-mono">/{page.name.toLowerCase().replace(/\s+/g, '-')}</div>
+                        <div className="text-xs text-slate-500 font-mono">/{page.path || page.name.toLowerCase().replace(/\s+/g, '-')}</div>
+                        {subpagesByParent[page.id] && subpagesByParent[page.id].length > 0 && (
+                          <div className="mt-2 flex items-center gap-1.5 text-xs text-blue-600">
+                            <FileText className="w-3 h-3" />
+                            <span>{subpagesByParent[page.id].length} subpagina{subpagesByParent[page.id].length > 1 ? '\'s' : ''}</span>
+                          </div>
+                        )}
                       </div>
                       <button className="text-slate-400 hover:text-slate-600 transition-colors">
                         <MoreHorizontal className="w-4 h-4" />

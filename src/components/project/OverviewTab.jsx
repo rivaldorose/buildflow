@@ -7,10 +7,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
-import ProjectNotes from './ProjectNotes';
 
 export default function OverviewTab({ project, features, pages, creditLogs }) {
-  const projectId = project?.id;
   const [platforms, setPlatforms] = useState({
     ios: true,
     android: true,
@@ -188,9 +186,33 @@ export default function OverviewTab({ project, features, pages, creditLogs }) {
 
           <hr className="border-gray-100 mb-10" />
 
-          {/* Section: Project Notes */}
+          {/* Section: Development Notes */}
           <section className="mb-12">
-            {projectId && <ProjectNotes projectId={projectId} />}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Development Notes</h3>
+              <button className="text-xs flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors">
+                <Plus className="w-3 h-3" /> Add Note
+              </button>
+            </div>
+            
+            <div className="space-y-6 text-sm text-gray-600">
+              <ul className="space-y-2 list-disc pl-5 marker:text-gray-300">
+                <li>Focus on user experience and intuitive design</li>
+                <li>Keep features simple and maintainable</li>
+                <li>Test on real devices before deployment</li>
+                <li>Regular code reviews and documentation updates</li>
+              </ul>
+
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2 text-xs uppercase tracking-wide text-gray-400">Recent Decisions</h4>
+                <div className="space-y-3">
+                  <div className="flex gap-3 items-start">
+                    <span className="text-xs font-mono text-gray-400 mt-0.5">{format(new Date(), 'MMM d')}</span>
+                    <p className="text-gray-700">Project setup and initial planning completed</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* Section: Quick Links */}

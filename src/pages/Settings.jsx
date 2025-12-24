@@ -1,20 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/config/supabase';
 import { 
-  User, ShieldCheck, CreditCard, Trash2, Settings as SettingsIcon, Bell, 
-  Palette, Globe, Zap, Database, Cpu, Mic, Plus, Users, Key, Eye,
+  User, ShieldCheck, Trash2, Eye,
   Check, AlertCircle, X, Smartphone, Shield, Laptop, Monitor, LogOut,
-  CheckCircle2, AlertTriangle, Circle, ShieldAlert, ChevronDown, Edit2
+  CheckCircle2, AlertTriangle, Circle, ShieldAlert, Edit2, Loader2,
+  ChevronLeft, ChevronRight, Mail, Calendar
 } from 'lucide-react';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Sidebar collapse state
+  const [activeSection, setActiveSection] = useState('profile'); // 'profile' or 'security'
+  const [fullName, setFullName] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
+  // Get current user
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me(),
+    retry: false
+  });
+
+  // Initialize fullName when user data is loaded
+  useEffect(() => {
+    if (user?.user_metadata?.full_name) {
+      setFullName(user.user_metadata.full_name);
+    }
+    if (user?.user_metadata?.avatar_url) {
+      setAvatarPreview(user.user_metadata.avatar_url);
+    }
+  }, [user]);
 
   const passwordStrength = () => {
     if (newPassword.length === 0) return { percent: 0, label: 'None', color: 'bg-slate-300' };
@@ -26,140 +55,277 @@ export default function Settings() {
   const strength = passwordStrength();
   const passwordsMatch = confirmPassword && newPassword === confirmPassword;
 
-  const activeSessions = [
-    { device: 'MacBook Pro • Chrome', icon: Laptop, location: 'Amsterdam, NL', ip: '192.168.1.1', lastActive: 'Active now', current: true },
-    { device: 'iPhone 13 • Safari', icon: Smartphone, location: 'Amsterdam, NL', ip: '192.168.1.45', lastActive: '2 hours ago', current: false },
-    { device: 'Windows PC • Edge', icon: Monitor, location: 'Rotterdam, NL', ip: '84.123.45.67', lastActive: '1 day ago', current: false }
-  ];
+  // Get current session info
+  const getCurrentSession = () => {
+    const userAgent = navigator.userAgent;
+    let device = 'Unknown Device';
+    let icon = Laptop;
+    
+    if (userAgent.includes('Mac')) {
+      device = 'Mac • ' + (userAgent.includes('Chrome') ? 'Chrome' : userAgent.includes('Safari') ? 'Safari' : 'Browser');
+      icon = Laptop;
+    } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+      device = 'iOS • ' + (userAgent.includes('Safari') ? 'Safari' : 'Browser');
+      icon = Smartphone;
+    } else if (userAgent.includes('Windows')) {
+      device = 'Windows • ' + (userAgent.includes('Chrome') ? 'Chrome' : userAgent.includes('Edge') ? 'Edge' : 'Browser');
+      icon = Monitor;
+    }
+    
+    return {
+      device,
+      icon,
+      location: 'Unknown',
+      ip: 'N/A',
+      lastActive: 'Active now',
+      current: true
+    };
+  };
 
-  const loginHistory = [
-    { date: 'Dec 19, 2024 14:35', device: '💻 MacBook Pro • Chrome', location: 'Amsterdam, NL', status: 'Success', suspicious: false },
-    { date: 'Dec 19, 2024 09:12', device: '📱 iPhone 13 • Safari', location: 'Amsterdam, NL', status: 'Success', suspicious: false },
-    { date: 'Dec 18, 2024 19:47', device: '💻 MacBook Pro • Chrome', location: 'Amsterdam, NL', status: 'Success', suspicious: false },
-    { date: 'Dec 15, 2024 11:23', device: 'Unknown • Chrome', location: 'Moscow, RU', status: 'Blocked', suspicious: true }
-  ];
+  const activeSessions = user ? [getCurrentSession()] : [];
 
-  const integrations = [
-    { name: 'Aura', icon: Zap, connected: true },
-    { name: 'Supabase', icon: Database, connected: true },
-    { name: 'Claude', icon: Cpu, connected: true },
-    { name: 'ElevenLabs', icon: Mic, connected: false },
-    { name: 'Stripe', icon: CreditCard, connected: true }
-  ];
+  // Login history - simplified version (in production, store this in database)
+  const loginHistory = user ? [
+    { date: new Date().toLocaleString('nl-NL'), device: '💻 ' + getCurrentSession().device, location: 'Current session', status: 'Success', suspicious: false }
+  ] : [];
+
+  // Handle avatar upload
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload to Supabase Storage
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update user metadata (trigger will sync to users table)
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          ...currentUser.user_metadata,
+          avatar_url: publicUrl
+        }
+      });
+
+      if (updateError) throw updateError;
+
+      // Also update users table directly (backup if trigger fails)
+      const { error: dbUpdateError } = await supabase
+        .from('users')
+        .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq('id', currentUser.id);
+
+      if (dbUpdateError) {
+        console.warn('Failed to update users table directly:', dbUpdateError);
+        // Don't throw - metadata update succeeded
+      }
+
+      toast.success('Avatar updated successfully!');
+      
+      // Invalidate user query to refresh
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error(error.message || 'Failed to upload avatar');
+      setAvatarPreview(user?.user_metadata?.avatar_url || null);
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = ''; // Reset input
+    }
+  };
+
+  // Handle profile save
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    
+    if (!fullName.trim()) {
+      toast.error('Please enter a name');
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
+      // Update user metadata (trigger will sync to users table)
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          ...currentUser.user_metadata,
+          full_name: fullName.trim()
+        }
+      });
+
+      if (updateError) throw updateError;
+
+      // Also update users table directly (backup if trigger fails)
+      const { error: dbUpdateError } = await supabase
+        .from('users')
+        .update({ full_name: fullName.trim(), updated_at: new Date().toISOString() })
+        .eq('id', currentUser.id);
+
+      if (dbUpdateError) {
+        console.warn('Failed to update users table directly:', dbUpdateError);
+        // Don't throw - metadata update succeeded
+      }
+
+      toast.success('Profile updated successfully!');
+      
+      // Invalidate user query to refresh
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  // Handle password change
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    if (!passwordsMatch) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
+    
+    try {
+      // Update password in Supabase
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Password updated successfully!');
+      
+      // Clear form
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error(error.message || 'Failed to update password');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 overflow-hidden h-full">
       
       {/* Left Sidebar */}
-      <aside className="w-[280px] bg-slate-50 border-r border-slate-200 overflow-y-auto flex-none pb-10">
-        <div className="p-4 space-y-8">
-          
+      <aside className={`bg-slate-50 border-r border-slate-200 overflow-hidden flex-none flex flex-col h-full transition-all duration-300 relative ${sidebarCollapsed ? 'w-[64px]' : 'w-[280px]'}`}>
+        {/* Toggle Button */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute -right-3 top-4 w-6 h-6 bg-white border border-slate-300 rounded-full flex items-center justify-center hover:bg-slate-50 shadow-sm z-20 transition-colors cursor-pointer"
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+          ) : (
+            <ChevronLeft className="w-3.5 h-3.5 text-slate-600" />
+          )}
+        </button>
+        
+        <div className="p-4 space-y-8 overflow-y-auto flex-1">
+
           {/* Account Section */}
           <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Account</h3>
+            {!sidebarCollapsed && (
+              <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Account</h3>
+            )}
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <User className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-              <span className="text-[15px] font-medium">Profile</span>
+            <button 
+              onClick={() => setActiveSection('profile')}
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-md transition-colors group relative ${
+                activeSection === 'profile'
+                  ? 'bg-blue-50 text-blue-700 rounded-r-md border-l-[3px] border-blue-600 -ml-4 pl-7 w-[calc(100%+16px)]'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+              title={sidebarCollapsed ? 'Profile' : ''}
+            >
+              <User className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} ${activeSection === 'profile' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+              {!sidebarCollapsed && (
+                <span className={`text-[15px] ${activeSection === 'profile' ? 'font-semibold' : 'font-medium'}`}>Profile</span>
+              )}
             </button>
 
-            <div className="flex items-center gap-3 px-3 py-2 bg-blue-50 text-blue-700 rounded-r-md border-l-[3px] border-blue-600 transition-colors -ml-4 pl-7 w-[calc(100%+16px)]">
-              <ShieldCheck className="w-[18px] h-[18px] text-blue-600" />
-              <span className="text-[15px] font-semibold">Password & Security</span>
-            </div>
-
-            <button className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <div className="flex items-center gap-3">
-                <CreditCard className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-                <span className="text-[15px] font-medium">Billing</span>
-              </div>
-              <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">PRO</span>
+            <button 
+              onClick={() => setActiveSection('security')}
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-md transition-colors group relative ${
+                activeSection === 'security'
+                  ? 'bg-blue-50 text-blue-700 rounded-r-md border-l-[3px] border-blue-600 -ml-4 pl-7 w-[calc(100%+16px)]'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+              title={sidebarCollapsed ? 'Password & Security' : ''}
+            >
+              <ShieldCheck className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} ${activeSection === 'security' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+              {!sidebarCollapsed && (
+                <span className={`text-[15px] ${activeSection === 'security' ? 'font-semibold' : 'font-medium'}`}>Password & Security</span>
+              )}
             </button>
 
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors group">
-              <Trash2 className="w-[18px] h-[18px] opacity-70" />
-              <span className="text-[15px] font-medium">Delete Account</span>
-            </button>
-          </div>
-
-          <div className="h-px bg-slate-200 mx-3"></div>
-
-          {/* Preferences Section */}
-          <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preferences</h3>
-            
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <SettingsIcon className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-              <span className="text-[15px] font-medium">General</span>
-            </button>
-
-            <button className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <div className="flex items-center gap-3">
-                <Bell className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-                <span className="text-[15px] font-medium">Notifications</span>
-              </div>
-              <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">3</div>
-            </button>
-
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <Palette className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-              <span className="text-[15px] font-medium">Appearance</span>
-            </button>
-
-            <button className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <div className="flex items-center gap-3">
-                <Globe className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-                <span className="text-[15px] font-medium">Language</span>
-              </div>
-              <span className="text-xs text-slate-400 font-medium">English</span>
+            <button 
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors group relative`}
+              title={sidebarCollapsed ? 'Delete Account' : ''}
+            >
+              <Trash2 className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} opacity-70`} />
+              {!sidebarCollapsed && (
+                <span className="text-[15px] font-medium">Delete Account</span>
+              )}
             </button>
           </div>
 
-          <div className="h-px bg-slate-200 mx-3"></div>
-
-          {/* Integrations Section */}
-          <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Integrations</h3>
-            
-            {integrations.map((integration, idx) => {
-              const Icon = integration.icon;
-              return (
-                <div key={idx} className="flex items-center justify-between px-3 py-2 text-slate-600 rounded-md group cursor-pointer hover:bg-slate-100">
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-[18px] h-[18px] text-slate-400" />
-                    <span className="text-[15px] font-medium">{integration.name}</span>
-                  </div>
-                  {integration.connected ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-emerald-50" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-slate-300" />
-                  )}
-                </div>
-              );
-            })}
-
-            <button className="w-full text-left px-3 py-2 mt-2 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors flex items-center gap-2">
-              <Plus className="w-3 h-3" /> Add Integration
-            </button>
-          </div>
-
-          <div className="h-px bg-slate-200 mx-3"></div>
-
-          {/* Workspace Section */}
-          <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Workspace</h3>
-            <button className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <div className="flex items-center gap-3">
-                <Users className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-                <span className="text-[15px] font-medium">Team</span>
-              </div>
-              <span className="text-xs text-slate-400">1 member</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors group">
-              <Key className="w-[18px] h-[18px] text-slate-400 group-hover:text-slate-600" />
-              <span className="text-[15px] font-medium">Roles & Permissions</span>
-            </button>
-          </div>
         </div>
       </aside>
 
@@ -167,11 +333,132 @@ export default function Settings() {
       <main className="flex-1 overflow-y-auto bg-white">
         <div className="max-w-[900px] mx-auto px-16 py-12 pb-24">
           
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-[32px] font-bold text-slate-900 tracking-tight">Password & Security</h1>
-            <p className="text-base text-slate-500 mt-2">Manage your password, 2FA, and security settings.</p>
-          </div>
+          {/* Profile Section */}
+          {activeSection === 'profile' && (
+            <>
+              {/* Page Header */}
+              <div className="mb-8">
+                <h1 className="text-[32px] font-bold text-slate-900 tracking-tight">Profile</h1>
+                <p className="text-base text-slate-500 mt-2">Manage your profile information and account settings.</p>
+              </div>
+
+              {/* Profile Information */}
+              <section className="mb-8">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-slate-900 tracking-tight">Profile Information</h2>
+                    <p className="text-sm text-slate-500 mt-1">Your account details and personal information.</p>
+                  </div>
+
+                  <form onSubmit={handleSaveProfile} className="space-y-6">
+                    {/* Avatar Section */}
+                    <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
+                      <div className="relative">
+                        {avatarPreview ? (
+                          <img 
+                            src={avatarPreview} 
+                            alt="Avatar" 
+                            className="w-20 h-20 rounded-full object-cover border-2 border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-slate-200">
+                            {user?.user_metadata?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                        )}
+                        {isUploadingAvatar && (
+                          <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 animate-spin text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                        </h3>
+                        <p className="text-sm text-slate-500 mt-1">{user?.email || 'No email'}</p>
+                      </div>
+                      <label className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer">
+                        <Edit2 className="w-4 h-4" />
+                        Change Avatar
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                          disabled={isUploadingAvatar}
+                        />
+                      </label>
+                    </div>
+
+                    {/* User Details */}
+                    <div className="grid grid-cols-1 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                          <input 
+                            type="email"
+                            value={user?.email || ''}
+                            disabled
+                            className="w-full h-11 pl-10 pr-4 text-base bg-slate-50 border border-slate-300 rounded-lg text-slate-600 cursor-not-allowed"
+                          />
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1.5">Email cannot be changed</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Full Name</label>
+                        <input 
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="w-full h-11 px-4 text-base bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Account Created</label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                          <input 
+                            type="text"
+                            value={user?.created_at ? new Date(user.created_at).toLocaleDateString('nl-NL', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            }) : 'Unknown'}
+                            disabled
+                            className="w-full h-11 pl-10 pr-4 text-base bg-slate-50 border border-slate-300 rounded-lg text-slate-600 cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100">
+                      <button 
+                        type="submit"
+                        disabled={isSavingProfile}
+                        className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSavingProfile && <Loader2 className="w-4 h-4 animate-spin" />}
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* Password & Security Section */}
+          {activeSection === 'security' && (
+            <>
+              {/* Page Header */}
+              <div className="mb-8">
+                <h1 className="text-[32px] font-bold text-slate-900 tracking-tight">Password & Security</h1>
+                <p className="text-base text-slate-500 mt-2">Manage your password, 2FA, and security settings.</p>
+              </div>
 
           {/* Section 1: Change Password */}
           <section className="mb-8">
@@ -181,7 +468,7 @@ export default function Settings() {
                 <p className="text-sm text-slate-500 mt-1">Update your password regularly for security.</p>
               </div>
 
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-5" onSubmit={handlePasswordChange}>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Current Password</label>
                   <div className="relative group">
@@ -271,14 +558,22 @@ export default function Settings() {
                 <div className="pt-2 flex justify-end gap-3">
                   <button 
                     type="button"
-                    className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      setCurrentPassword('');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    }}
+                    disabled={isUpdatingPassword}
+                    className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit"
-                    className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all"
+                    disabled={isUpdatingPassword || !passwordsMatch || newPassword.length < 8}
+                    className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
+                    {isUpdatingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
                     Update Password
                   </button>
                 </div>
@@ -494,7 +789,8 @@ export default function Settings() {
               </div>
             </div>
           </section>
-
+            </>
+          )}
         </div>
       </main>
     </div>
