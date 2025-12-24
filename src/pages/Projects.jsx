@@ -5,7 +5,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Layers, Plus, FileText, CheckCircle2, Bug, Timer, Eye, Pencil, 
-  Settings, Wind, MoreHorizontal, Trash2
+  Settings, Wind, MoreHorizontal, Trash2, Server, Github, Globe, 
+  Database, Zap, X, Save, ExternalLink
 } from 'lucide-react';
 
 export default function Projects() {
@@ -14,6 +15,16 @@ export default function Projects() {
   const [filter, setFilter] = useState('all');
   const [companyFilter, setCompanyFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [editingMetadata, setEditingMetadata] = useState(null);
+  const [metadataForm, setMetadataForm] = useState({
+    backend_active: false,
+    github_repo: '',
+    hosted_url: '',
+    hosting_platform: '',
+    database_platform: '',
+    api_deployed: false,
+    api_url: ''
+  });
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
@@ -27,6 +38,44 @@ export default function Projects() {
       setDeleteConfirm(null);
     }
   });
+
+  const updateProjectMetadataMutation = useMutation({
+    mutationFn: ({ projectId, metadata }) => base44.entities.Project.update(projectId, metadata),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setEditingMetadata(null);
+      setMetadataForm({
+        backend_active: false,
+        github_repo: '',
+        hosted_url: '',
+        hosting_platform: '',
+        database_platform: '',
+        api_deployed: false,
+        api_url: ''
+      });
+    }
+  });
+
+  const handleEditMetadata = (project) => {
+    setEditingMetadata(project.id);
+    setMetadataForm({
+      backend_active: project.backend_active || false,
+      github_repo: project.github_repo || '',
+      hosted_url: project.hosted_url || '',
+      hosting_platform: project.hosting_platform || '',
+      database_platform: project.database_platform || '',
+      api_deployed: project.api_deployed || false,
+      api_url: project.api_url || ''
+    });
+  };
+
+  const handleSaveMetadata = () => {
+    if (!editingMetadata) return;
+    updateProjectMetadataMutation.mutate({
+      projectId: editingMetadata,
+      metadata: metadataForm
+    });
+  };
 
   const handleDeleteProject = (projectId) => {
     deleteProjectMutation.mutate(projectId);
@@ -355,7 +404,7 @@ export default function Projects() {
                     </div>
 
                     {/* Progress */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 mb-4">
                       <div className="flex items-center justify-between text-xs font-medium">
                         <span className="text-slate-500">Overall Progress</span>
                         <span className="text-slate-900">{progress}% complete</span>
@@ -366,6 +415,48 @@ export default function Projects() {
                           style={{ width: `${progress}%` }}
                         ></div>
                       </div>
+                    </div>
+
+                    {/* Metadata Badges */}
+                    <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100">
+                      {project.backend_active && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200">
+                          <Server className="w-3 h-3" />
+                          Backend
+                        </div>
+                      )}
+                      {project.github_repo && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-700 rounded-md text-xs font-medium border border-slate-200">
+                          <Github className="w-3 h-3" />
+                          GitHub
+                        </div>
+                      )}
+                      {project.hosted_url && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium border border-blue-200">
+                          <Globe className="w-3 h-3" />
+                          Live
+                        </div>
+                      )}
+                      {project.database_platform && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-medium border border-purple-200">
+                          <Database className="w-3 h-3" />
+                          {project.database_platform}
+                        </div>
+                      )}
+                      {project.api_deployed && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-orange-50 text-orange-700 rounded-md text-xs font-medium border border-orange-200">
+                          <Zap className="w-3 h-3" />
+                          API
+                        </div>
+                      )}
+                      <button
+                        onClick={() => handleEditMetadata(project)}
+                        className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md text-xs font-medium border border-slate-200 transition-colors"
+                        title="Edit metadata"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        Edit
+                      </button>
                     </div>
                   </div>
 
@@ -413,6 +504,169 @@ export default function Projects() {
           </div>
         </div>
       </main>
+
+      {/* Metadata Edit Modal */}
+      {editingMetadata && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setEditingMetadata(null)}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl z-50">
+            <div className="p-6 border-b border-slate-200 sticky top-0 bg-white rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Project Metadata</h3>
+                  <p className="text-sm text-slate-500 mt-1">Configure backend, GitHub, hosting en meer</p>
+                </div>
+                <button
+                  onClick={() => setEditingMetadata(null)}
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Backend */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Server className="w-5 h-5 text-slate-500" />
+                    <label className="text-sm font-semibold text-slate-900">Backend Actief</label>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={metadataForm.backend_active}
+                      onChange={(e) => setMetadataForm({ ...metadataForm, backend_active: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {/* GitHub */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <Github className="w-5 h-5 text-slate-500" />
+                  GitHub Repository
+                </label>
+                <input
+                  type="text"
+                  placeholder="bijv. github.com/username/repo"
+                  value={metadataForm.github_repo}
+                  onChange={(e) => setMetadataForm({ ...metadataForm, github_repo: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              {/* Hosting */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    <Globe className="w-5 h-5 text-slate-500" />
+                    Hosting URL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="bijv. https://app.vercel.app"
+                    value={metadataForm.hosted_url}
+                    onChange={(e) => setMetadataForm({ ...metadataForm, hosted_url: e.target.value })}
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    <Globe className="w-5 h-5 text-slate-500" />
+                    Platform
+                  </label>
+                  <select
+                    value={metadataForm.hosting_platform}
+                    onChange={(e) => setMetadataForm({ ...metadataForm, hosting_platform: e.target.value })}
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+                  >
+                    <option value="">Selecteer platform</option>
+                    <option value="Vercel">Vercel</option>
+                    <option value="Netlify">Netlify</option>
+                    <option value="AWS">AWS</option>
+                    <option value="Google Cloud">Google Cloud</option>
+                    <option value="Azure">Azure</option>
+                    <option value="DigitalOcean">DigitalOcean</option>
+                    <option value="Anders">Anders</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Database */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <Database className="w-5 h-5 text-slate-500" />
+                  Database Platform
+                </label>
+                <select
+                  value={metadataForm.database_platform}
+                  onChange={(e) => setMetadataForm({ ...metadataForm, database_platform: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+                >
+                  <option value="">Geen database</option>
+                  <option value="Supabase">Supabase</option>
+                  <option value="Firebase">Firebase</option>
+                  <option value="PostgreSQL">PostgreSQL</option>
+                  <option value="MySQL">MySQL</option>
+                  <option value="MongoDB">MongoDB</option>
+                  <option value="Redis">Redis</option>
+                  <option value="Anders">Anders</option>
+                </select>
+              </div>
+
+              {/* API */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-slate-500" />
+                    <label className="text-sm font-semibold text-slate-900">API Gedeployed</label>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={metadataForm.api_deployed}
+                      onChange={(e) => setMetadataForm({ ...metadataForm, api_deployed: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+                {metadataForm.api_deployed && (
+                  <input
+                    type="text"
+                    placeholder="bijv. https://api.example.com"
+                    value={metadataForm.api_url}
+                    onChange={(e) => setMetadataForm({ ...metadataForm, api_url: e.target.value })}
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-200 flex items-center justify-end gap-3 bg-slate-50 rounded-b-xl">
+              <button
+                onClick={() => setEditingMetadata(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleSaveMetadata}
+                disabled={updateProjectMetadataMutation.isPending}
+                className="px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                {updateProjectMetadataMutation.isPending ? 'Opslaan...' : 'Opslaan'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirm && (
