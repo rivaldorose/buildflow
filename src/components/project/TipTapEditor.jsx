@@ -19,9 +19,22 @@ import {
   Redo,
   Link as LinkIcon,
   Image as ImageIcon,
-  Table as TableIcon
+  Table as TableIcon,
+  Plus,
+  Minus,
+  Trash2,
+  Columns,
+  Rows,
+  Merge
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function TipTapEditor({ content, onChange, placeholder = "Begin met schrijven..." }) {
   const editor = useEditor({
@@ -95,6 +108,8 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
   const insertTable = () => {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
   };
+
+  const isInTable = editor.isActive('table');
 
   return (
     <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
@@ -222,17 +237,102 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
           >
             <ImageIcon className="w-4 h-4" />
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={insertTable}
-            className={editor.isActive('table') ? 'bg-slate-200' : ''}
-            style={{ padding: '4px 8px', minWidth: 'auto' }}
-            title="Insert Table"
-          >
-            <TableIcon className="w-4 h-4" />
-          </Button>
+          {isInTable ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="bg-slate-200"
+                  style={{ padding: '4px 8px', minWidth: 'auto' }}
+                  title="Table Options"
+                >
+                  <TableIcon className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().addRowBefore().run()}
+                  disabled={!editor.can().addRowBefore()}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Row Above
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().addRowAfter().run()}
+                  disabled={!editor.can().addRowAfter()}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Row Below
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().deleteRow().run()}
+                  disabled={!editor.can().deleteRow()}
+                >
+                  <Minus className="w-4 h-4 mr-2" />
+                  Delete Row
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().addColumnBefore().run()}
+                  disabled={!editor.can().addColumnBefore()}
+                >
+                  <Columns className="w-4 h-4 mr-2" />
+                  Add Column Left
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().addColumnAfter().run()}
+                  disabled={!editor.can().addColumnAfter()}
+                >
+                  <Columns className="w-4 h-4 mr-2" />
+                  Add Column Right
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().deleteColumn().run()}
+                  disabled={!editor.can().deleteColumn()}
+                >
+                  <Minus className="w-4 h-4 mr-2" />
+                  Delete Column
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().mergeCells().run()}
+                  disabled={!editor.can().mergeCells()}
+                >
+                  <Merge className="w-4 h-4 mr-2" />
+                  Merge Cells
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().splitCell().run()}
+                  disabled={!editor.can().splitCell()}
+                >
+                  <Merge className="w-4 h-4 mr-2" />
+                  Split Cell
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => editor.chain().focus().deleteTable().run()}
+                  disabled={!editor.can().deleteTable()}
+                  className="text-red-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Table
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={insertTable}
+              style={{ padding: '4px 8px', minWidth: 'auto' }}
+              title="Insert Table"
+            >
+              <TableIcon className="w-4 h-4" />
+            </Button>
+          )}
         </div>
 
         <div className="flex gap-1">
