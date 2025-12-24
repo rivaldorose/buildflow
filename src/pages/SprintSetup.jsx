@@ -188,8 +188,7 @@ export default function SprintSetup() {
   };
 
   const workingDays = calculateWorkingDays();
-  const effectiveProjectId = selectedProjectId || projectId;
-  const canCreate = sprintName.trim().length > 0 && sprintName.length <= 50 && effectiveProjectId;
+  const canCreate = sprintName.trim().length > 0 && sprintName.length <= 50 && (selectedProjectId || projectId);
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen flex flex-col">
