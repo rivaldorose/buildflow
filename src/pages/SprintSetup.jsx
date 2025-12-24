@@ -61,19 +61,25 @@ export default function SprintSetup() {
 
   // Create sprint mutation
   const createSprintMutation = useMutation({
-    mutationFn: (data) => base44.entities.Sprint?.create(data) || Promise.resolve({ id: Date.now().toString(), ...data }),
-    onSuccess: () => {
+    mutationFn: async (data) => {
+      console.log('Creating sprint with data:', data);
+      const result = await base44.entities.Sprint.create(data);
+      return result;
+    },
+    onSuccess: (newSprint) => {
       queryClient.invalidateQueries(['sprints']);
+      queryClient.invalidateQueries(['sprints', projectId]);
+      queryClient.invalidateQueries(['project', projectId]);
       toast.success('Sprint created successfully');
       if (projectId) {
-        navigate(createPageUrl('ProjectDetail') + `?id=${projectId}`);
+        navigate(createPageUrl('SprintDetail') + `?id=${newSprint.id}`);
       } else {
         navigate(createPageUrl('Home'));
       }
     },
     onError: (error) => {
       console.error('Error creating sprint:', error);
-      toast.error('Failed to create sprint');
+      toast.error('Failed to create sprint: ' + (error.message || 'Unknown error'));
     }
   });
 
@@ -136,15 +142,20 @@ export default function SprintSetup() {
       return;
     }
 
+    if (!projectId) {
+      toast.error('No project selected. Please select a project first.');
+      return;
+    }
+
     const sprintData = {
-      project: projectId,
+      project: projectId, // This should match the database column name
       name: sprintName,
-      duration_weeks: parseInt(duration),
-      start_date: startDate,
-      end_date: endDate,
+      duration_weeks: duration === 'custom' ? null : parseInt(duration),
+      start_date: startDate || null,
+      end_date: endDate || null,
       goal: goal || null,
-      objectives: objectives,
-      team_members: selectedTeamMembers,
+      objectives: objectives.length > 0 ? objectives : null,
+      team_members: selectedTeamMembers.length > 0 ? selectedTeamMembers : null,
       status: 'planning'
     };
 
@@ -184,19 +195,19 @@ export default function SprintSetup() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <button 
             onClick={() => navigate(-1)}
             className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg transition-all"
           >
             Cancel
           </button>
-          <button
+            <button 
             onClick={handleCreateSprint}
             disabled={!canCreate || createSprintMutation.isPending}
             className="px-4 py-2 text-sm font-semibold text-white bg-[#6B46C1] hover:bg-[#553C9A] shadow-sm rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+            >
             {createSprintMutation.isPending ? 'Creating...' : 'Create Sprint'}
-          </button>
+            </button>
         </div>
       </nav>
 
@@ -230,7 +241,7 @@ export default function SprintSetup() {
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-slate-700">
                   Sprint Name <span className="text-[#6B46C1]">*</span>
-                </label>
+            </label>
                 <div className="relative">
                   <input
                     type="text"
@@ -261,15 +272,15 @@ export default function SprintSetup() {
                     { value: 'custom', label: 'Custom' }
                   ].map((option) => {
                     const isSelected = duration === option.value;
-                    return (
+                return (
                       <label key={option.value} className="cursor-pointer relative">
-                        <input
-                          type="radio"
+                    <input 
+                      type="radio" 
                           name="duration"
                           value={option.value}
                           checked={isSelected}
                           onChange={(e) => setDuration(e.target.value)}
-                          className="sr-only"
+                      className="sr-only"
                         />
                         <div className={`border rounded-lg p-3 text-center hover:bg-slate-50 transition-all ${
                           isSelected
@@ -284,27 +295,27 @@ export default function SprintSetup() {
                           <span className={`text-xs ${isSelected ? 'font-bold' : 'font-medium'} block`}>
                             {option.label}
                           </span>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
 
               {/* Dates */}
               <div className="grid grid-cols-2 gap-6 items-start">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
                     Start Date <span className="text-[#6B46C1]">*</span>
-                  </label>
+            </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Calendar className="h-4 w-4 text-slate-400" />
                     </div>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+            <input 
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
                       className="w-full pl-10 bg-white border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-[#6B46C1] focus:border-transparent block p-2.5 shadow-sm font-medium"
                     />
                   </div>
@@ -487,7 +498,7 @@ export default function SprintSetup() {
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#6B46C1] relative"></div>
-              </label>
+            </label>
             </div>
           </div>
 
@@ -502,15 +513,15 @@ export default function SprintSetup() {
               {teamMembers.map((member) => {
                 const isSelected = selectedTeamMembers.includes(member.id);
                 return (
-                  <label
+                  <label 
                     key={member.id}
                     className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                      isSelected
+                      isSelected 
                         ? 'border-[#6B46C1]/40 bg-purple-50/30'
                         : 'border-slate-200 hover:bg-slate-50'
                     }`}
                   >
-                    <input
+                    <input 
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleToggleTeamMember(member.id)}
@@ -552,17 +563,17 @@ export default function SprintSetup() {
             {showAdvanced && (
               <div className="px-6 pb-6 border-t border-slate-100">
                 <p className="text-sm text-slate-500 mt-4">Advanced settings coming soon...</p>
-              </div>
+            </div>
             )}
           </div>
-          
+
         </div>
       </main>
 
       {/* STICKY BOTTOM BAR */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <div className="max-w-[840px] mx-auto flex items-center justify-between">
-          <button
+              <button 
             onClick={() => {
               // Save as draft functionality
               toast.info('Sprint saved as draft');
@@ -571,7 +582,7 @@ export default function SprintSetup() {
           >
             <Save className="w-4 h-4" />
             Save as Draft
-          </button>
+              </button>
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center text-xs text-slate-400 mr-4">
               <CheckCircle className="w-3 h-3 mr-1.5 text-green-500" />
@@ -583,7 +594,7 @@ export default function SprintSetup() {
             >
               Cancel
             </button>
-            <button
+            <button 
               onClick={handleCreateSprint}
               disabled={!canCreate || createSprintMutation.isPending}
               className="px-8 py-2.5 text-sm font-bold text-white bg-[#6B46C1] hover:bg-[#553C9A] shadow-md shadow-purple-200 rounded-lg transition-all flex items-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
