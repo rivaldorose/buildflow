@@ -62,24 +62,29 @@ export default function SprintSetup() {
     enabled: true
   });
 
-  // Sync selectedProjectId with URL projectId or last created project
+  // Sync selectedProjectId with URL projectId
   useEffect(() => {
     if (projectId && projectId !== selectedProjectId) {
       setSelectedProjectId(projectId);
-    } else if (!projectId && !selectedProjectId && allProjects.length > 0) {
-      // If no projectId in URL, try to use last created project from localStorage
+    }
+  }, [projectId, selectedProjectId]);
+
+  // Auto-select last created project if no projectId in URL
+  useEffect(() => {
+    if (!projectId && !selectedProjectId && allProjects.length > 0) {
+      // Try to use last created project from localStorage
       const lastCreatedProjectId = localStorage.getItem('lastCreatedProjectId');
       if (lastCreatedProjectId && allProjects.some(p => p.id === lastCreatedProjectId)) {
         setSelectedProjectId(lastCreatedProjectId);
         setSearchParams({ projectId: lastCreatedProjectId });
-      } else if (allProjects.length > 0) {
+      } else {
         // Otherwise, select the most recent project (first in list)
         const mostRecentProject = allProjects[0];
         setSelectedProjectId(mostRecentProject.id);
         setSearchParams({ projectId: mostRecentProject.id });
       }
     }
-  }, [projectId, allProjects]);
+  }, [allProjects.length]); // Only depend on length to avoid infinite loops
 
   // Get selected project data
   const effectiveProjectId = selectedProjectId || projectId;
