@@ -28,7 +28,7 @@ export default function DesignSystemSetup() {
       ...existingData,
       designSystem: { palette: selectedPalette, font: selectedFont }
     }));
-    navigate(createPageUrl('SprintSetup'));
+    navigate(createPageUrl('ProjectReady'));
   };
 
   return (
