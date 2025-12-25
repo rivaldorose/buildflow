@@ -721,7 +721,7 @@ export const TestCase = {
   }
 };
 
-// Note entity
+// Note entity (for page notes)
 export const Note = {
   list: async (orderBy = '-created_date') => {
     const [field, ascending] = orderBy.startsWith('-') 
@@ -785,6 +785,78 @@ export const Note = {
   delete: async (id) => {
     const { error } = await supabase
       .from('notes')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return { success: true };
+  }
+};
+
+// ProjectNote entity (for project notes)
+export const ProjectNote = {
+  list: async (orderBy = '-created_date') => {
+    const [field, ascending] = orderBy.startsWith('-') 
+      ? [orderBy.slice(1), false] 
+      : [orderBy, true];
+    
+    const { data, error } = await supabase
+      .from('project_notes')
+      .select('*')
+      .order(field, { ascending });
+    
+    if (error) throw error;
+    return formatResponse(data);
+  },
+  
+  filter: async (filters, orderBy = '-created_date') => {
+    const [field, ascending] = orderBy.startsWith('-') 
+      ? [orderBy.slice(1), false] 
+      : [orderBy, true];
+    
+    let query = supabase.from('project_notes').select('*');
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          query = query.eq(key, value);
+        }
+      });
+    }
+    
+    query = query.order(field, { ascending });
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return formatResponse(data);
+  },
+  
+  create: async (data) => {
+    const { data: result, error } = await supabase
+      .from('project_notes')
+      .insert(data)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return formatResponse(result);
+  },
+  
+  update: async (id, data) => {
+    const { data: result, error } = await supabase
+      .from('project_notes')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return formatResponse(result);
+  },
+  
+  delete: async (id) => {
+    const { error } = await supabase
+      .from('project_notes')
       .delete()
       .eq('id', id);
     

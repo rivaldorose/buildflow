@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Note } from '@/api/entities';
+import { ProjectNote } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Edit2, Trash2, X, Save, Loader2, FileText } from 'lucide-react';
@@ -33,7 +33,7 @@ export default function ProjectNotes({ projectId }) {
   const loadNotes = async () => {
     setIsLoading(true);
     try {
-      const data = await Note.filter({ project: projectId });
+      const data = await ProjectNote.filter({ project: projectId });
       setNotes(data);
     } catch (error) {
       console.error('Error loading project notes:', error);
@@ -50,7 +50,7 @@ export default function ProjectNotes({ projectId }) {
 
     setIsSaving(true);
     try {
-      await Note.create({
+      await ProjectNote.create({
         project: projectId,
         title: formData.title,
         content: formData.content || { type: 'doc', content: [] },
@@ -70,7 +70,7 @@ export default function ProjectNotes({ projectId }) {
   const handleUpdateNote = async (noteId) => {
     setIsSaving(true);
     try {
-      await Note.update(noteId, {
+      await ProjectNote.update(noteId, {
         title: formData.title,
         content: formData.content
       });
@@ -90,7 +90,7 @@ export default function ProjectNotes({ projectId }) {
     if (!confirm('Weet je zeker dat je deze note wilt verwijderen?')) return;
     
     try {
-      await Note.delete(noteId);
+      await ProjectNote.delete(noteId);
       toast.success('Note verwijderd');
       loadNotes();
     } catch (error) {
