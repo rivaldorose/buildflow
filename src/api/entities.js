@@ -1114,3 +1114,105 @@ export const User = {
     return session;
   }
 };
+
+// FlowNode entity
+export const FlowNode = {
+  list: async (flowId, orderBy = 'created_at') => {
+    const [field, ascending] = orderBy.startsWith('-') 
+      ? [orderBy.slice(1), false] 
+      : [orderBy, true];
+    
+    const { data, error } = await supabase
+      .from('flow_nodes')
+      .select('*')
+      .eq('flow_id', flowId)
+      .order(field, { ascending });
+    
+    if (error) throw error;
+    return formatResponse(data);
+  },
+  
+  create: async (data) => {
+    const { data: result, error } = await supabase
+      .from('flow_nodes')
+      .insert(data)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return formatResponse(result);
+  },
+  
+  update: async (id, data) => {
+    const { data: result, error } = await supabase
+      .from('flow_nodes')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return formatResponse(result);
+  },
+  
+  delete: async (id) => {
+    const { error } = await supabase
+      .from('flow_nodes')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return { success: true };
+  }
+};
+
+// FlowConnection entity
+export const FlowConnection = {
+  list: async (flowId, orderBy = 'created_at') => {
+    const [field, ascending] = orderBy.startsWith('-') 
+      ? [orderBy.slice(1), false] 
+      : [orderBy, true];
+    
+    const { data, error } = await supabase
+      .from('flow_connections')
+      .select('*')
+      .eq('flow_id', flowId)
+      .order(field, { ascending });
+    
+    if (error) throw error;
+    return formatResponse(data);
+  },
+  
+  create: async (data) => {
+    const { data: result, error } = await supabase
+      .from('flow_connections')
+      .insert(data)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return formatResponse(result);
+  },
+  
+  update: async (id, data) => {
+    const { data: result, error } = await supabase
+      .from('flow_connections')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return formatResponse(result);
+  },
+  
+  delete: async (id) => {
+    const { error } = await supabase
+      .from('flow_connections')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return { success: true };
+  }
+};
