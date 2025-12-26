@@ -1,0 +1,12 @@
+# Run deze commando's in je terminal:
+
+cd /Users/rivaldomacandrew/Desktop/apps/build-flow-9138e81d
+
+supabase login
+
+supabase link --project-ref xezygggzjlxclzndbxfl
+
+supabase secrets set OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
+
+supabase functions deploy transcribe-audio
+
