@@ -27,7 +27,8 @@ import {
   Rows,
   Merge,
   Maximize,
-  Minimize
+  Minimize,
+  Mic
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,9 +38,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import VoiceNoteInput from '@/components/VoiceNoteInput';
 
 export default function TipTapEditor({ content, onChange, placeholder = "Begin met schrijven..." }) {
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = React.useState(false);
+  const [voiceText, setVoiceText] = React.useState('');
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -110,6 +122,15 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
 
   const insertTable = () => {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  };
+
+  const handleVoiceTextInsert = () => {
+    if (voiceText.trim() && editor) {
+      // Insert text at cursor position
+      editor.chain().focus().insertContent(voiceText.trim()).run();
+      setVoiceText('');
+      setIsVoiceModalOpen(false);
+    }
   };
 
   const isInTable = editor.isActive('table');
@@ -363,6 +384,16 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
             type="button"
             variant="ghost"
             size="sm"
+            onClick={() => setIsVoiceModalOpen(true)}
+            style={{ padding: '4px 8px', minWidth: 'auto' }}
+            title="Voice Input (Cmd+Shift+V)"
+          >
+            <Mic className="w-4 h-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setIsFullscreen(!isFullscreen)}
             style={{ padding: '4px 8px', minWidth: 'auto' }}
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
@@ -371,6 +402,25 @@ export default function TipTapEditor({ content, onChange, placeholder = "Begin m
           </Button>
         </div>
       </div>
+
+      {/* Voice Input Dialog */}
+      <Dialog open={isVoiceModalOpen} onOpenChange={setIsVoiceModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Voice Input</DialogTitle>
+            <DialogDescription>
+              Spreek je tekst in en deze wordt automatisch getranscribeerd naar tekst.
+            </DialogDescription>
+          </DialogHeader>
+          <VoiceNoteInput
+            value={voiceText}
+            onChange={setVoiceText}
+            placeholder="Spreek je tekst in of type hier..."
+            language="nl"
+            onSave={handleVoiceTextInsert}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Editor Content */}
       <div className={`overflow-y-auto p-6 ${isFullscreen ? 'h-[calc(100vh-120px)]' : 'min-h-[500px] max-h-[70vh]'}`}>
