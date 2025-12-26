@@ -193,13 +193,6 @@ export default function VoiceNoteInput({
         return;
       }
 
-      // Create form data
-      const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.webm');
-      formData.append('model', 'whisper-1');
-      formData.append('language', language);
-      formData.append('response_format', 'json');
-
       // Convert blob to base64 for Supabase Edge Function
       const reader = new FileReader();
       reader.readAsDataURL(audioBlob);
@@ -242,11 +235,20 @@ export default function VoiceNoteInput({
           throw new Error('Transcription failed. Please check your Supabase Edge Function configuration.');
         }
       }
-
-      if (error) {
-        throw error;
+    } catch (error) {
+      console.error('Whisper error:', error);
+      toast.error('Transcription failed: ' + (error.message || 'Unknown error'));
+      
+      // Final fallback: use interim text if available
+      if (interimText) {
+        onChange(value + (value ? ' ' : '') + interimText);
+        toast.info('Using browser transcription as fallback');
       }
-
+    } finally {
+      setIsProcessing(false);
+      audioChunksRef.current = [];
+      setInterimText('');
+    }
   };
 
   // Toggle listening
