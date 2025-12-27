@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ProjectNote } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit2, Trash2, X, Save, Loader2, FileText } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Loader2, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -21,6 +21,7 @@ export default function ProjectNotes({ projectId }) {
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [expandedNotes, setExpandedNotes] = useState({}); // Track which notes are expanded
   const [formData, setFormData] = useState({
     title: '',
     content: null
@@ -35,11 +36,24 @@ export default function ProjectNotes({ projectId }) {
     try {
       const data = await ProjectNote.filter({ project: projectId });
       setNotes(data);
+      // Set all notes as expanded by default when loading
+      const expanded = {};
+      data.forEach(note => {
+        expanded[note.id] = true;
+      });
+      setExpandedNotes(expanded);
     } catch (error) {
       console.error('Error loading project notes:', error);
       toast.error('Failed to load notes');
     }
     setIsLoading(false);
+  };
+
+  const toggleNote = (noteId) => {
+    setExpandedNotes(prev => ({
+      ...prev,
+      [noteId]: !prev[noteId]
+    }));
   };
 
   const handleCreateNote = async () => {
@@ -266,19 +280,29 @@ export default function ProjectNotes({ projectId }) {
             ) : (
               // View Mode
               <>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h4 className="text-base font-semibold text-gray-900 mb-2">
-                      {note.title}
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      {format(new Date(note.created_date), 'd MMM yyyy, HH:mm')}
-                      {note.updated_date !== note.created_date && (
-                        <span> • Bijgewerkt {format(new Date(note.updated_date), 'd MMM yyyy, HH:mm')}</span>
-                      )}
-                    </p>
+                <div 
+                  className="flex items-start justify-between cursor-pointer hover:bg-slate-50 -m-6 p-6 rounded-lg transition-colors"
+                  onClick={() => toggleNote(note.id)}
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    {expandedNotes[note.id] ? (
+                      <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      <h4 className="text-base font-semibold text-gray-900 mb-2">
+                        {note.title}
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        {format(new Date(note.created_date), 'd MMM yyyy, HH:mm')}
+                        {note.updated_date !== note.created_date && (
+                          <span> • Bijgewerkt {format(new Date(note.updated_date), 'd MMM yyyy, HH:mm')}</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       onClick={() => startEditing(note)}
                       variant="ghost"
@@ -297,9 +321,11 @@ export default function ProjectNotes({ projectId }) {
                   </div>
                 </div>
                 
-                <div className="border-t border-slate-200 pt-4">
-                  <TipTapViewer content={note.content} />
-                </div>
+                {expandedNotes[note.id] && (
+                  <div className="border-t border-slate-200 pt-4 mt-4">
+                    <TipTapViewer content={note.content} />
+                  </div>
+                )}
               </>
             )}
           </div>
