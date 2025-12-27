@@ -1216,3 +1216,63 @@ export const FlowConnection = {
     return { success: true };
   }
 };
+
+// ProjectIdea entity (single idea per project)
+export const ProjectIdea = {
+  get: async (projectId) => {
+    const { data, error } = await supabase
+      .from('project_idea')
+      .select('*')
+      .eq('project', projectId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
+    return formatResponse(data || null);
+  },
+  
+  create: async (data) => {
+    const { data: result, error } = await supabase
+      .from('project_idea')
+      .insert(data)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return formatResponse(result);
+  },
+  
+  update: async (projectId, data) => {
+    // Try to update first
+    const { data: existing } = await supabase
+      .from('project_idea')
+      .select('id')
+      .eq('project', projectId)
+      .single();
+    
+    if (existing) {
+      // Update existing
+      const { data: result, error } = await supabase
+        .from('project_idea')
+        .update(data)
+        .eq('project', projectId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return formatResponse(result);
+    } else {
+      // Create new if doesn't exist
+      return await ProjectIdea.create({ ...data, project: projectId });
+    }
+  },
+  
+  delete: async (projectId) => {
+    const { error } = await supabase
+      .from('project_idea')
+      .delete()
+      .eq('project', projectId);
+    
+    if (error) throw error;
+    return { success: true };
+  }
+};

@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import ProjectNotes from '@/components/project/ProjectNotes';
+import ProjectIdea from '@/components/project/ProjectIdea';
 import { 
   ChevronRight, ChevronDown, Layers, Smartphone, Settings as SettingsIcon, 
   Trash2, MoreHorizontal, Rocket, Download, Share2, Star, BarChart2, Bug, 
@@ -2556,6 +2557,9 @@ Provide a brief executive summary with key insights and next steps.`,
 
           {/* Right Column (Sidebar) */}
           <div className="lg:col-span-4 space-y-6">
+            
+            {/* Project Idea */}
+            {projectId && <ProjectIdea projectId={projectId} />}
             
             {/* AI Assistant */}
             <section className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl border border-purple-200 shadow-sm p-6">
